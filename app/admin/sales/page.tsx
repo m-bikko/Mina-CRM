@@ -43,6 +43,7 @@ interface PaymentType {
   _id: string;
   name: string;
   taxRate: number;
+  bankCommissionRate: number;
 }
 
 interface SaleItem {
@@ -61,6 +62,7 @@ interface Sale {
   items: SaleItem[];
   totalAmount: number;
   taxAmount: number;
+  bankCommissionAmount: number;
 }
 
 export default function SalesPage() {
@@ -174,6 +176,16 @@ export default function SalesPage() {
     return (calculateTotal() * paymentType.taxRate) / 100;
   };
 
+  const calculateBankCommission = () => {
+    const paymentType = paymentTypes.find((pt) => pt._id === selectedPaymentType);
+    if (!paymentType) return 0;
+    return (calculateTotal() * paymentType.bankCommissionRate) / 100;
+  };
+
+  const calculateAmountToBalance = () => {
+    return calculateTotal() - calculateBankCommission();
+  };
+
   const formatPhoneNumber = (value: string) => {
     // Удаляем все нечисловые символы
     const digits = value.replace(/\D/g, "");
@@ -284,7 +296,8 @@ export default function SalesPage() {
                     <SelectContent>
                       {paymentTypes.map((pt) => (
                         <SelectItem key={pt._id} value={pt._id}>
-                          {pt.name} (налог {pt.taxRate}%)
+                          {pt.name} (налог {pt.taxRate}%
+                          {pt.bankCommissionRate > 0 && `, комиссия ${pt.bankCommissionRate}%`})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -392,19 +405,41 @@ export default function SalesPage() {
                   </div>
                   <div className="mt-4 pt-4 border-t space-y-2">
                     <div className="flex justify-between items-center">
-                      <span>Сумма:</span>
+                      <span>Сумма продажи:</span>
                       <span className="font-semibold">{calculateTotal().toLocaleString()} ₸</span>
                     </div>
                     {selectedPaymentType && (
-                      <div className="flex justify-between items-center text-sm text-muted-foreground">
-                        <span>Налог:</span>
-                        <span>{calculateTax().toLocaleString()} ₸</span>
+                      <>
+                        <div className="flex justify-between items-center text-sm text-muted-foreground">
+                          <span>Налог ({paymentTypes.find(pt => pt._id === selectedPaymentType)?.taxRate}%):</span>
+                          <span>{calculateTax().toFixed(2)} ₸</span>
+                        </div>
+                        {calculateBankCommission() > 0 && (
+                          <div className="flex justify-between items-center text-sm text-orange-600">
+                            <span>Комиссия банка ({paymentTypes.find(pt => pt._id === selectedPaymentType)?.bankCommissionRate}%):</span>
+                            <span>-{calculateBankCommission().toFixed(2)} ₸</span>
+                          </div>
+                        )}
+                        <div className="border-t pt-2 mt-2">
+                          <div className="flex justify-between items-center text-lg font-bold">
+                            <span>К оплате покупателем:</span>
+                            <span>{calculateTotal().toLocaleString()} ₸</span>
+                          </div>
+                          {calculateBankCommission() > 0 && (
+                            <div className="flex justify-between items-center text-sm text-green-600 mt-2">
+                              <span>Попадет в баланс:</span>
+                              <span className="font-semibold">{calculateAmountToBalance().toFixed(2)} ₸</span>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                    {!selectedPaymentType && (
+                      <div className="flex justify-between items-center text-lg font-bold">
+                        <span>К оплате:</span>
+                        <span>{calculateTotal().toLocaleString()} ₸</span>
                       </div>
                     )}
-                    <div className="flex justify-between items-center text-lg font-bold">
-                      <span>К оплате:</span>
-                      <span>{calculateTotal().toLocaleString()} ₸</span>
-                    </div>
                   </div>
                 </div>
               )}
@@ -431,12 +466,14 @@ export default function SalesPage() {
               <TableHead>Товаров</TableHead>
               <TableHead>Сумма</TableHead>
               <TableHead>Налог</TableHead>
+              <TableHead>Комиссия</TableHead>
+              <TableHead>В баланс</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sales.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell colSpan={8} className="text-center text-muted-foreground">
                   Нет продаж
                 </TableCell>
               </TableRow>
@@ -454,6 +491,12 @@ export default function SalesPage() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {(sale.taxAmount || 0).toLocaleString()} ₸
+                  </TableCell>
+                  <TableCell className="text-orange-600">
+                    {(sale.bankCommissionAmount || 0) > 0 ? `-${(sale.bankCommissionAmount || 0).toLocaleString()} ₸` : '—'}
+                  </TableCell>
+                  <TableCell className="font-semibold text-green-600">
+                    {((sale.totalAmount || 0) - (sale.bankCommissionAmount || 0)).toLocaleString()} ₸
                   </TableCell>
                 </TableRow>
               ))

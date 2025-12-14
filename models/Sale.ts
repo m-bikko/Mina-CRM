@@ -22,9 +22,11 @@ export interface ISale {
   paymentType: Types.ObjectId;
   paymentTypeName: string;
   taxRateSnapshot: number;
+  bankCommissionRateSnapshot: number;
   items: ISaleItem[];
   totalAmount: number;
   taxAmount: number;
+  bankCommissionAmount: number;
   totalCostPrice: number;
   createdAt: Date;
   updatedAt: Date;
@@ -116,6 +118,12 @@ const SaleSchema = new Schema<ISale>(
       required: true,
       min: 0,
     },
+    bankCommissionRateSnapshot: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
     items: {
       type: [SaleItemSchema],
       required: true,
@@ -133,6 +141,12 @@ const SaleSchema = new Schema<ISale>(
       type: Number,
       required: true,
       min: 0,
+    },
+    bankCommissionAmount: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
     },
     totalCostPrice: {
       type: Number,

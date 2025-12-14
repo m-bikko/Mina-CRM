@@ -25,6 +25,7 @@ interface PaymentType {
   _id: string;
   name: string;
   taxRate: number;
+  bankCommissionRate: number;
   isActive: boolean;
   createdAt: string;
 }
@@ -36,6 +37,7 @@ export default function PaymentTypesPage() {
 
   const [name, setName] = useState("");
   const [taxRate, setTaxRate] = useState("");
+  const [bankCommissionRate, setBankCommissionRate] = useState("");
 
   const fetchPaymentTypes = useCallback(async () => {
     try {
@@ -54,7 +56,7 @@ export default function PaymentTypesPage() {
   }, [fetchPaymentTypes]);
 
   const createPaymentType = async () => {
-    if (!name || !taxRate) {
+    if (!name || !taxRate || !bankCommissionRate) {
       alert("Заполните все поля");
       return;
     }
@@ -62,6 +64,12 @@ export default function PaymentTypesPage() {
     const taxRateNum = parseFloat(taxRate);
     if (taxRateNum < 0 || taxRateNum > 100) {
       alert("Ставка налога должна быть от 0 до 100");
+      return;
+    }
+
+    const bankCommissionRateNum = parseFloat(bankCommissionRate);
+    if (bankCommissionRateNum < 0 || bankCommissionRateNum > 100) {
+      alert("Комиссия банка должна быть от 0 до 100");
       return;
     }
 
@@ -73,6 +81,7 @@ export default function PaymentTypesPage() {
         body: JSON.stringify({
           name,
           taxRate: taxRateNum,
+          bankCommissionRate: bankCommissionRateNum,
           isActive: true,
         }),
       });
@@ -83,6 +92,7 @@ export default function PaymentTypesPage() {
         alert("Тип оплаты успешно создан!");
         setName("");
         setTaxRate("");
+        setBankCommissionRate("");
         setIsDialogOpen(false);
         fetchPaymentTypes();
       } else {
@@ -136,6 +146,22 @@ export default function PaymentTypesPage() {
                 />
               </div>
 
+              <div>
+                <Label>Комиссия банка (%)</Label>
+                <Input
+                  type="number"
+                  value={bankCommissionRate}
+                  onChange={(e) => setBankCommissionRate(e.target.value)}
+                  placeholder="Например: 2 или 2.5"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Комиссия вычитается из выручки при продаже
+                </p>
+              </div>
+
               <Button
                 onClick={createPaymentType}
                 disabled={loading}
@@ -154,6 +180,7 @@ export default function PaymentTypesPage() {
             <TableRow>
               <TableHead>Название</TableHead>
               <TableHead>Ставка налога (%)</TableHead>
+              <TableHead>Комиссия банка (%)</TableHead>
               <TableHead>Статус</TableHead>
               <TableHead>Дата создания</TableHead>
             </TableRow>
@@ -162,7 +189,7 @@ export default function PaymentTypesPage() {
             {paymentTypes.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={4}
+                  colSpan={5}
                   className="text-center text-muted-foreground"
                 >
                   Нет типов оплаты
@@ -178,6 +205,12 @@ export default function PaymentTypesPage() {
                     {Number(paymentType.taxRate) % 1 === 0
                       ? Math.floor(paymentType.taxRate)
                       : paymentType.taxRate}
+                    %
+                  </TableCell>
+                  <TableCell>
+                    {Number(paymentType.bankCommissionRate || 0) % 1 === 0
+                      ? Math.floor(paymentType.bankCommissionRate || 0)
+                      : (paymentType.bankCommissionRate || 0)}
                     %
                   </TableCell>
                   <TableCell>

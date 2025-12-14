@@ -117,6 +117,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     const taxAmount = (totalAmount * paymentType.taxRate) / 100;
+    const bankCommissionAmount = (totalAmount * paymentType.bankCommissionRate) / 100;
+
+    // Сумма, которая фактически попадает в баланс (после вычета комиссии)
+    const amountToBalance = totalAmount - bankCommissionAmount;
 
     const sale = await Sale.create(
       [
@@ -126,9 +130,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           paymentType: validatedData.paymentType,
           paymentTypeName: paymentType.name,
           taxRateSnapshot: paymentType.taxRate,
+          bankCommissionRateSnapshot: paymentType.bankCommissionRate,
           items: itemsWithAllocations,
           totalAmount,
           taxAmount,
+          bankCommissionAmount,
           totalCostPrice,
         },
       ],
@@ -139,13 +145,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (!financialStats) {
       await FinancialStats.create(
-        [{ currentBalance: totalAmount }],
+        [{ currentBalance: amountToBalance }],
         { session }
       );
     } else {
       await FinancialStats.updateOne(
         {},
-        { $inc: { currentBalance: totalAmount } },
+        { $inc: { currentBalance: amountToBalance } },
         { session }
       );
     }
@@ -155,8 +161,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         {
           type: "INCOME",
           category: "SALE",
-          amount: totalAmount,
-          reason: `Продажа ${validatedData.customerPhone}`,
+          amount: amountToBalance,
+          reason: `Продажа ${validatedData.customerPhone}${bankCommissionAmount > 0 ? ` (комиссия банка: ${bankCommissionAmount.toFixed(2)} ₸)` : ""}`,
           referenceId: sale[0]._id,
           date: validatedData.date || new Date(),
         },

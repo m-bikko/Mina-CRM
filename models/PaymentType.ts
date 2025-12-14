@@ -3,6 +3,7 @@ import mongoose, { Schema, models, Model } from "mongoose";
 export interface IPaymentType {
   name: string;
   taxRate: number;
+  bankCommissionRate: number;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -20,6 +21,13 @@ const PaymentTypeSchema = new Schema<IPaymentType>(
       required: true,
       min: 0,
       max: 100,
+    },
+    bankCommissionRate: {
+      type: Number,
+      required: true,
+      min: 0,
+      max: 100,
+      default: 0,
     },
     isActive: {
       type: Boolean,
