@@ -35,7 +35,8 @@ interface DashboardData {
     amount: number;
   };
   inventoryValue: number;
-  supplyCost: number;
+  inventoryCost: number;
+  totalProfit: number;
   salesChart: {
     date: string;
     amount: number;
@@ -120,7 +121,7 @@ export default function DashboardPage() {
               {(data.capital || 0).toLocaleString()} ₸
             </div>
             <p className="text-xs text-muted-foreground">
-              Баланс + затраты на закупы
+              Баланс + себестоимость товаров на складе
             </p>
           </CardContent>
         </Card>
@@ -224,13 +225,43 @@ export default function DashboardPage() {
               <span className="font-semibold">{(data.balance || 0).toLocaleString()} ₸</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">+ Затраты на закупы:</span>
-              <span className="font-semibold">{(data.supplyCost || 0).toLocaleString()} ₸</span>
+              <span className="text-muted-foreground">+ Себестоимость товаров на складе:</span>
+              <span className="font-semibold">{(data.inventoryCost || 0).toLocaleString()} ₸</span>
             </div>
             <div className="border-t pt-2 flex justify-between">
               <span className="font-bold">= Капитал:</span>
               <span className="font-bold text-lg">{(data.capital || 0).toLocaleString()} ₸</span>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Общая прибыль</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-600">
+              {(data.totalProfit || 0).toLocaleString()} ₸
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              Разница между выручкой и себестоимостью всех продаж
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Себестоимость товаров на складе</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">
+              {(data.inventoryCost || 0).toLocaleString()} ₸
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              Общая стоимость остатков по закупочным ценам (FIFO)
+            </p>
           </CardContent>
         </Card>
       </div>

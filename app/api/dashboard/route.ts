@@ -65,7 +65,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     startDate.setDate(startDate.getDate() - daysAgo);
     startDate.setHours(0, 0, 0, 0);
 
-    const salesChart = await Sale.aggregate([
+    const salesChartRaw = await Sale.aggregate([
       {
         $match: {
           date: { $gte: startDate },
@@ -84,6 +84,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         $sort: { _id: 1 },
       },
     ]);
+
+    // Преобразуем в формат, ожидаемый фронтендом
+    const salesChart = salesChartRaw.map((item) => ({
+      date: item._id,
+      amount: item.total,
+    }));
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -105,7 +111,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const salesToday = {
       count: salesTodayResult[0]?.count || 0,
-      total: salesTodayResult[0]?.total || 0,
+      amount: salesTodayResult[0]?.total || 0,
     };
 
     // Общая прибыль (сумма всех продаж - себестоимость)
