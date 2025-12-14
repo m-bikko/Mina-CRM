@@ -6,6 +6,7 @@ import PaymentType from "@/models/PaymentType";
 import Transaction from "@/models/Transaction";
 import FinancialStats from "@/models/FinancialStats";
 import { saleSchema } from "@/lib/validations/sale";
+import { allocateBatches, calculateTotalCost } from "@/lib/fifo";
 import mongoose from "mongoose";
 
 export async function GET(): Promise<NextResponse> {
@@ -39,6 +40,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       throw new Error("Payment type not found");
     }
 
+    // Проверка наличия товара
     for (const item of validatedData.items) {
       const product = await Product.findById(item.product).session(session);
 
@@ -61,8 +63,38 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
+    // Распределить товары по партиям FIFO + рассчитать себестоимость
     let totalAmount = 0;
+    let totalCostPrice = 0;
+    const itemsWithAllocations = [];
 
+    for (const item of validatedData.items) {
+      // Распределить по партиям
+      const allocations = await allocateBatches(
+        item.product,
+        item.sizeLabel,
+        item.quantity,
+        session
+      );
+
+      // Рассчитать себестоимость этого item
+      const itemCostPrice = calculateTotalCost(allocations);
+
+      itemsWithAllocations.push({
+        product: item.product,
+        productName: item.productName,
+        sizeLabel: item.sizeLabel,
+        quantity: item.quantity,
+        priceAtSale: item.priceAtSale,
+        batchAllocations: allocations,
+        totalCostPrice: itemCostPrice,
+      });
+
+      totalAmount += item.quantity * item.priceAtSale;
+      totalCostPrice += itemCostPrice;
+    }
+
+    // Обновить Product.quantity
     for (const item of validatedData.items) {
       const product = await Product.findById(item.product).session(session);
 
@@ -82,8 +114,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         },
         { session }
       );
-
-      totalAmount += item.quantity * item.priceAtSale;
     }
 
     const taxAmount = (totalAmount * paymentType.taxRate) / 100;
@@ -96,9 +126,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           paymentType: validatedData.paymentType,
           paymentTypeName: paymentType.name,
           taxRateSnapshot: paymentType.taxRate,
-          items: validatedData.items,
+          items: itemsWithAllocations,
           totalAmount,
           taxAmount,
+          totalCostPrice,
         },
       ],
       { session }

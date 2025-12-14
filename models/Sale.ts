@@ -1,11 +1,19 @@
 import mongoose, { Schema, models, Model, Types } from "mongoose";
 
+export interface IBatchAllocation {
+  batch: Types.ObjectId;
+  quantity: number;
+  costPrice: number;
+}
+
 export interface ISaleItem {
   product: Types.ObjectId;
   productName: string;
   sizeLabel: string;
   quantity: number;
   priceAtSale: number;
+  batchAllocations: IBatchAllocation[];
+  totalCostPrice: number;
 }
 
 export interface ISale {
@@ -17,9 +25,31 @@ export interface ISale {
   items: ISaleItem[];
   totalAmount: number;
   taxAmount: number;
+  totalCostPrice: number;
   createdAt: Date;
   updatedAt: Date;
 }
+
+const BatchAllocationSchema = new Schema<IBatchAllocation>(
+  {
+    batch: {
+      type: Schema.Types.ObjectId,
+      ref: "InventoryBatch",
+      required: true,
+    },
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+    costPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+  },
+  { _id: false }
+);
 
 const SaleItemSchema = new Schema<ISaleItem>(
   {
@@ -45,6 +75,17 @@ const SaleItemSchema = new Schema<ISaleItem>(
       type: Number,
       required: true,
       min: 0,
+    },
+    batchAllocations: {
+      type: [BatchAllocationSchema],
+      required: true,
+      default: [],
+    },
+    totalCostPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
     },
   },
   { _id: false }
@@ -92,6 +133,12 @@ const SaleSchema = new Schema<ISale>(
       type: Number,
       required: true,
       min: 0,
+    },
+    totalCostPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
     },
   },
   {

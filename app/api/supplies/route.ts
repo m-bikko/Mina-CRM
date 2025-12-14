@@ -5,6 +5,7 @@ import Product from "@/models/Product";
 import Transaction from "@/models/Transaction";
 import FinancialStats from "@/models/FinancialStats";
 import { supplySchema } from "@/lib/validations/supply";
+import { createBatches } from "@/lib/fifo";
 import mongoose from "mongoose";
 
 export async function GET(): Promise<NextResponse> {
@@ -75,6 +76,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       ],
       { session }
     );
+
+    // Создать партии товара
+    await createBatches(supply[0]._id, validatedData.items, session);
 
     const financialStats = await FinancialStats.findOne().session(session);
 

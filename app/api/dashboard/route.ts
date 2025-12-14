@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/mongodb";
 import Product from "@/models/Product";
 import Sale from "@/models/Sale";
-import Supply from "@/models/Supply";
+import InventoryBatch from "@/models/InventoryBatch";
 import FinancialStats from "@/models/FinancialStats";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -25,7 +25,28 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     ]);
     const taxPayable = taxPayableResult[0]?.total || 0;
 
-    // Стоимость товаров на складе по ценам продажи
+    // Стоимость товаров на складе по себестоимости (из партий)
+    const inventoryCostResult = await InventoryBatch.aggregate([
+      {
+        $match: { remainingQuantity: { $gt: 0 } },
+      },
+      {
+        $project: {
+          value: {
+            $multiply: ["$remainingQuantity", "$costPrice"],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$value" },
+        },
+      },
+    ]);
+    const inventoryCost = inventoryCostResult[0]?.total || 0;
+
+    // Стоимость товаров на складе по ценам продажи (для UI)
     const products = await Product.find({ isActive: true });
     let inventoryValue = 0;
 
@@ -35,19 +56,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       });
     });
 
-    // Сумма затрат на закупы
-    const supplyCostResult = await Supply.aggregate([
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$totalCost" },
-        },
-      },
-    ]);
-    const supplyCost = supplyCostResult[0]?.total || 0;
-
-    // Капитал = Баланс + Потраченные деньги на закупы
-    const capital = balance + supplyCost;
+    // ПРАВИЛЬНЫЙ расчет капитала
+    // Капитал = Баланс + Стоимость товаров на складе (по себестоимости)
+    const capital = balance + inventoryCost;
 
     const daysAgo = period === "week" ? 7 : 30;
     const startDate = new Date();
@@ -97,6 +108,24 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       total: salesTodayResult[0]?.total || 0,
     };
 
+    // Общая прибыль (сумма всех продаж - себестоимость)
+    const profitResult = await Sale.aggregate([
+      {
+        $project: {
+          profit: {
+            $subtract: ["$totalAmount", { $ifNull: ["$totalCostPrice", 0] }],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$profit" },
+        },
+      },
+    ]);
+    const totalProfit = profitResult[0]?.total || 0;
+
     return NextResponse.json({
       success: true,
       data: {
@@ -106,7 +135,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         salesChart,
         salesToday,
         inventoryValue,
-        supplyCost,
+        inventoryCost,
+        totalProfit,
       },
     });
   } catch (error) {
