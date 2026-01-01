@@ -1,9 +1,17 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const isDevelopment = process.env.NODE_ENV !== "production";
+
+const MONGODB_URI = isDevelopment
+  ? process.env.MONGODB_URI_DEV
+  : process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-  throw new Error("Please define the MONGODB_URI environment variable inside .env");
+  throw new Error(
+    isDevelopment
+      ? "Please define MONGODB_URI_DEV environment variable inside .env for development"
+      : "Please define MONGODB_URI environment variable inside .env for production"
+  );
 }
 
 interface CachedConnection {
@@ -36,6 +44,7 @@ export async function connectDB(): Promise<typeof mongoose> {
     };
 
     cached.promise = mongoose.connect(MONGODB_URI as string, opts).then((mongoose) => {
+      console.log(`MongoDB connected [${isDevelopment ? "DEV" : "PROD"}]`);
       return mongoose;
     });
   }

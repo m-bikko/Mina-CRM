@@ -26,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Eye } from "lucide-react";
 
 interface Product {
   _id: string;
@@ -70,6 +70,7 @@ export default function SalesPage() {
   const [paymentTypes, setPaymentTypes] = useState<PaymentType[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
 
   const [customerPhone, setCustomerPhone] = useState<string>("");
   const [selectedPaymentType, setSelectedPaymentType] = useState<string>("");
@@ -467,18 +468,19 @@ export default function SalesPage() {
               <TableHead>Налог</TableHead>
               <TableHead>Комиссия</TableHead>
               <TableHead>В баланс</TableHead>
+              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sales.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground">
+                <TableCell colSpan={9} className="text-center text-muted-foreground">
                   Нет продаж
                 </TableCell>
               </TableRow>
             ) : (
               sales.map((sale) => (
-                <TableRow key={sale._id}>
+                <TableRow key={sale._id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedSale(sale)}>
                   <TableCell>
                     {new Date(sale.date).toLocaleDateString("ru-RU")}
                   </TableCell>
@@ -497,12 +499,83 @@ export default function SalesPage() {
                   <TableCell className="font-semibold text-green-600">
                     {((sale.totalAmount || 0) - (sale.bankCommissionAmount || 0)).toLocaleString()} ₸
                   </TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedSale(sale); }}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
+
+      {/* Детали продажи */}
+      <Dialog open={!!selectedSale} onOpenChange={(open) => !open && setSelectedSale(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Детали продажи</DialogTitle>
+          </DialogHeader>
+          {selectedSale && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Дата</p>
+                  <p className="font-medium">{new Date(selectedSale.date).toLocaleString("ru-RU")}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Клиент</p>
+                  <p className="font-medium">{selectedSale.customerPhone}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Тип оплаты</p>
+                  <p className="font-medium">{selectedSale.paymentTypeName}</p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-semibold mb-3">Товары:</h4>
+                <div className="space-y-2">
+                  {selectedSale.items?.map((item, index) => (
+                    <div key={index} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                      <div>
+                        <p className="font-medium">{item.productName}</p>
+                        <p className="text-sm text-muted-foreground">Размер: {item.sizeLabel}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">{item.quantity} шт. × {item.priceAtSale.toLocaleString()} ₸</p>
+                        <p className="text-sm text-muted-foreground">= {(item.quantity * item.priceAtSale).toLocaleString()} ₸</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t pt-4 space-y-2">
+                <div className="flex justify-between">
+                  <span>Сумма продажи:</span>
+                  <span className="font-semibold">{(selectedSale.totalAmount || 0).toLocaleString()} ₸</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Налог:</span>
+                  <span>{(selectedSale.taxAmount || 0).toLocaleString()} ₸</span>
+                </div>
+                {(selectedSale.bankCommissionAmount || 0) > 0 && (
+                  <div className="flex justify-between text-orange-600">
+                    <span>Комиссия банка:</span>
+                    <span>-{(selectedSale.bankCommissionAmount || 0).toLocaleString()} ₸</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-lg font-bold text-green-600 pt-2 border-t">
+                  <span>В баланс:</span>
+                  <span>{((selectedSale.totalAmount || 0) - (selectedSale.bankCommissionAmount || 0)).toLocaleString()} ₸</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

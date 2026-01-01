@@ -125,8 +125,8 @@ export default function ProductsPage() {
       setFormData({
         name: product.name,
         price: product.price.toString(),
-        sizes: product.sizes,
-        images: product.images,
+        sizes: product.sizes.map((s) => ({ label: s.label, quantity: s.quantity })),
+        images: [...product.images],
       });
       setIsModalOpen(true);
     }
@@ -193,17 +193,19 @@ export default function ProductsPage() {
     }
 
     if (editingSizeIndex !== null) {
+      // При редактировании сохраняем существующее количество
       setFormData((prev) => ({
         ...prev,
         sizes: prev.sizes.map((size, index) =>
-          index === editingSizeIndex ? { ...newSize } : size
+          index === editingSizeIndex ? { label: newSize.label, quantity: size.quantity } : size
         ),
       }));
       setEditingSizeIndex(null);
     } else {
+      // Новый размер начинается с количества 0
       setFormData((prev) => ({
         ...prev,
-        sizes: [...prev.sizes, { ...newSize }],
+        sizes: [...prev.sizes, { label: newSize.label, quantity: 0 }],
       }));
     }
     setNewSize({ label: "", quantity: 0 });
@@ -211,7 +213,7 @@ export default function ProductsPage() {
 
   const editSize = (index: number): void => {
     const size = formData.sizes[index];
-    setNewSize({ ...size });
+    setNewSize({ label: size.label, quantity: 0 });
     setEditingSizeIndex(index);
   };
 

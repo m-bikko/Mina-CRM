@@ -33,7 +33,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowUpCircle, ArrowDownCircle, Plus, Minus } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, Plus, Minus, Eye } from "lucide-react";
 
 interface Transaction {
   _id: string;
@@ -49,6 +49,7 @@ export default function FinancePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   const [adjustmentType, setAdjustmentType] = useState<"INCOME" | "EXPENSE">("INCOME");
   const [amount, setAmount] = useState<string>("");
@@ -234,18 +235,19 @@ export default function FinancePage() {
                 <TableHead>Категория</TableHead>
                 <TableHead>Обоснование</TableHead>
                 <TableHead className="text-right">Сумма</TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {transactions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
                     Нет транзакций
                   </TableCell>
                 </TableRow>
               ) : (
                 transactions.map((transaction) => (
-                  <TableRow key={transaction._id}>
+                  <TableRow key={transaction._id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedTransaction(transaction)}>
                     <TableCell>
                       {new Date(transaction.date).toLocaleString("ru-RU")}
                     </TableCell>
@@ -283,6 +285,11 @@ export default function FinancePage() {
                         {(transaction.amount || 0).toLocaleString()} ₸
                       </span>
                     </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedTransaction(transaction); }}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -290,6 +297,51 @@ export default function FinancePage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Детали транзакции */}
+      <Dialog open={!!selectedTransaction} onOpenChange={(open) => !open && setSelectedTransaction(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Детали транзакции</DialogTitle>
+          </DialogHeader>
+          {selectedTransaction && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-center p-4">
+                {selectedTransaction.type === "INCOME" ? (
+                  <ArrowUpCircle className="h-16 w-16 text-green-600" />
+                ) : (
+                  <ArrowDownCircle className="h-16 w-16 text-red-600" />
+                )}
+              </div>
+
+              <div className="text-center">
+                <p className={`text-3xl font-bold ${selectedTransaction.type === "INCOME" ? "text-green-600" : "text-red-600"}`}>
+                  {selectedTransaction.type === "INCOME" ? "+" : "-"}
+                  {(selectedTransaction.amount || 0).toLocaleString()} ₸
+                </p>
+                <p className="text-muted-foreground mt-1">
+                  {selectedTransaction.type === "INCOME" ? "Доход" : "Расход"}
+                </p>
+              </div>
+
+              <div className="border-t pt-4 space-y-3">
+                <div>
+                  <p className="text-sm text-muted-foreground">Дата и время</p>
+                  <p className="font-medium">{new Date(selectedTransaction.date).toLocaleString("ru-RU")}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Категория</p>
+                  <p className="font-medium">{getCategoryLabel(selectedTransaction.category)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Обоснование</p>
+                  <p className="font-medium">{selectedTransaction.reason}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

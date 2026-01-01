@@ -26,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Eye } from "lucide-react";
 
 interface Product {
   _id: string;
@@ -58,6 +58,7 @@ export default function SupplyPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedSupply, setSelectedSupply] = useState<Supply | null>(null);
 
   const [supplyItems, setSupplyItems] = useState<SupplyItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string>("");
@@ -306,18 +307,19 @@ export default function SupplyPage() {
               <TableHead>Дата</TableHead>
               <TableHead>Количество позиций</TableHead>
               <TableHead>Общая сумма</TableHead>
+              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {supplies.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center text-muted-foreground">
+                <TableCell colSpan={4} className="text-center text-muted-foreground">
                   Нет завозов
                 </TableCell>
               </TableRow>
             ) : (
               supplies.map((supply) => (
-                <TableRow key={supply._id}>
+                <TableRow key={supply._id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedSupply(supply)}>
                   <TableCell>
                     {new Date(supply.date).toLocaleDateString("ru-RU")}
                   </TableCell>
@@ -325,12 +327,59 @@ export default function SupplyPage() {
                   <TableCell className="font-semibold">
                     {(supply.totalCost || 0).toLocaleString()} ₸
                   </TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedSupply(supply); }}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
+
+      {/* Детали завоза */}
+      <Dialog open={!!selectedSupply} onOpenChange={(open) => !open && setSelectedSupply(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Детали завоза</DialogTitle>
+          </DialogHeader>
+          {selectedSupply && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Дата</p>
+                <p className="font-medium">{new Date(selectedSupply.date).toLocaleString("ru-RU")}</p>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-semibold mb-3">Товары:</h4>
+                <div className="space-y-2">
+                  {selectedSupply.items?.map((item, index) => (
+                    <div key={index} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                      <div>
+                        <p className="font-medium">{item.productName}</p>
+                        <p className="text-sm text-muted-foreground">Размер: {item.sizeLabel}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">{item.quantity} шт. × {item.costPrice.toLocaleString()} ₸</p>
+                        <p className="text-sm text-muted-foreground">= {(item.quantity * item.costPrice).toLocaleString()} ₸</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <div className="flex justify-between text-lg font-bold">
+                  <span>Итого:</span>
+                  <span>{(selectedSupply.totalCost || 0).toLocaleString()} ₸</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
