@@ -39,7 +39,7 @@ interface InventoryBatch {
   supply: {
     _id: string;
     date: string;
-  };
+  } | null;
 }
 
 interface WriteOffItem {

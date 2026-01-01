@@ -4,7 +4,7 @@ export interface IInventoryBatch {
   product: Types.ObjectId;
   productName: string;
   sizeLabel: string;
-  supply: Types.ObjectId;
+  supply: Types.ObjectId | null; // null for legacy products before supply system
   costPrice: number;
   initialQuantity: number;
   remainingQuantity: number;
@@ -31,8 +31,9 @@ const InventoryBatchSchema = new Schema<IInventoryBatch>(
     supply: {
       type: Schema.Types.ObjectId,
       ref: "Supply",
-      required: true,
+      required: false, // null for legacy products before supply system
       index: true,
+      default: null,
     },
     costPrice: {
       type: Number,
