@@ -10,6 +10,7 @@ import {
   ShoppingCart,
   CreditCard,
   Wallet,
+  PackageMinus,
 } from "lucide-react";
 
 const navItems = [
@@ -32,6 +33,11 @@ const navItems = [
     title: "Продажи",
     href: "/admin/sales",
     icon: ShoppingCart,
+  },
+  {
+    title: "Списания",
+    href: "/admin/write-off",
+    icon: PackageMinus,
   },
   {
     title: "Типы оплаты",

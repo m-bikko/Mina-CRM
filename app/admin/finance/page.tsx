@@ -38,7 +38,7 @@ import { ArrowUpCircle, ArrowDownCircle, Plus, Minus, Eye } from "lucide-react";
 interface Transaction {
   _id: string;
   type: "INCOME" | "EXPENSE";
-  category: "SALE" | "SUPPLY" | "MANUAL_ADJUSTMENT";
+  category: "SALE" | "SUPPLY" | "MANUAL_ADJUSTMENT" | "WRITE_OFF";
   amount: number;
   reason: string;
   date: string;
@@ -120,6 +120,7 @@ export default function FinancePage() {
       SALE: "Продажа",
       SUPPLY: "Завоз",
       MANUAL_ADJUSTMENT: "Ручная корректировка",
+      WRITE_OFF: "Списание",
     };
     return labels[category] || category;
   };

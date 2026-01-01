@@ -186,6 +186,24 @@ export default function ProductsPage() {
     }));
   };
 
+  const moveImageUp = (index: number): void => {
+    if (index === 0) return;
+    setFormData((prev) => {
+      const newImages = [...prev.images];
+      [newImages[index - 1], newImages[index]] = [newImages[index], newImages[index - 1]];
+      return { ...prev, images: newImages };
+    });
+  };
+
+  const moveImageDown = (index: number): void => {
+    if (index === formData.images.length - 1) return;
+    setFormData((prev) => {
+      const newImages = [...prev.images];
+      [newImages[index], newImages[index + 1]] = [newImages[index + 1], newImages[index]];
+      return { ...prev, images: newImages };
+    });
+  };
+
   const addSize = (): void => {
     if (!newSize.label) {
       alert("Укажите размер");
@@ -338,22 +356,57 @@ export default function ProductsPage() {
                 {uploadingImage && (
                   <p className="text-sm text-gray-500 mt-2">Загрузка...</p>
                 )}
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap gap-3">
                   {formData.images.map((url, index) => (
-                    <div key={index} className="relative w-20 h-20">
-                      <Image
-                        src={url}
-                        alt={`Product ${index + 1}`}
-                        fill
-                        className="object-cover rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-700"
-                      >
-                        ×
-                      </button>
+                    <div key={index} className="relative">
+                      <div className="relative w-24 h-24">
+                        <Image
+                          src={url}
+                          alt={`Product ${index + 1}`}
+                          fill
+                          className="object-cover rounded-lg"
+                        />
+                        {index === 0 && (
+                          <span className="absolute bottom-1 left-1 bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded">
+                            Главное
+                          </span>
+                        )}
+                      </div>
+                      <div className="absolute -top-2 -right-2 flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-700"
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <div className="flex justify-center gap-1 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => moveImageUp(index)}
+                          disabled={index === 0}
+                          className={`px-2 py-1 text-xs rounded ${
+                            index === 0
+                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                          }`}
+                        >
+                          ←
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveImageDown(index)}
+                          disabled={index === formData.images.length - 1}
+                          className={`px-2 py-1 text-xs rounded ${
+                            index === formData.images.length - 1
+                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                          }`}
+                        >
+                          →
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

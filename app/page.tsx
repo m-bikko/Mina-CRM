@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
-import { Search, X, ChevronDown } from "lucide-react";
+import { Search, X, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Size {
   label: string;
@@ -25,7 +25,47 @@ export default function StorePage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedImage, setSelectedImage] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const catalogRef = useRef<HTMLDivElement>(null);
+
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = useCallback(() => {
+    if (!touchStart || !touchEnd || !selectedProduct) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && selectedImage < selectedProduct.images.length - 1) {
+      setSelectedImage(prev => prev + 1);
+    }
+    if (isRightSwipe && selectedImage > 0) {
+      setSelectedImage(prev => prev - 1);
+    }
+  }, [touchStart, touchEnd, selectedProduct, selectedImage]);
+
+  const nextImage = () => {
+    if (selectedProduct && selectedImage < selectedProduct.images.length - 1) {
+      setSelectedImage(prev => prev + 1);
+    }
+  };
+
+  const prevImage = () => {
+    if (selectedImage > 0) {
+      setSelectedImage(prev => prev - 1);
+    }
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -233,17 +273,62 @@ export default function StorePage() {
             <div className="grid md:grid-cols-2">
               {/* Images */}
               <div className="relative">
-                <div className="relative aspect-square bg-neutral-900">
+                <div
+                  className="relative aspect-square bg-neutral-900 touch-pan-y"
+                  onTouchStart={onTouchStart}
+                  onTouchMove={onTouchMove}
+                  onTouchEnd={onTouchEnd}
+                >
                   {selectedProduct.images[selectedImage] ? (
                     <Image
                       src={selectedProduct.images[selectedImage]}
                       alt={selectedProduct.name}
                       fill
-                      className="object-cover"
+                      className="object-cover select-none pointer-events-none"
+                      draggable={false}
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full text-neutral-700">
                       Нет фото
+                    </div>
+                  )}
+
+                  {/* Navigation Arrows */}
+                  {selectedProduct.images.length > 1 && (
+                    <>
+                      {selectedImage > 0 && (
+                        <button
+                          onClick={prevImage}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 backdrop-blur-sm rounded-full w-10 h-10 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+                        >
+                          <ChevronLeft className="w-6 h-6" />
+                        </button>
+                      )}
+                      {selectedImage < selectedProduct.images.length - 1 && (
+                        <button
+                          onClick={nextImage}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 backdrop-blur-sm rounded-full w-10 h-10 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+                        >
+                          <ChevronRight className="w-6 h-6" />
+                        </button>
+                      )}
+                    </>
+                  )}
+
+                  {/* Dots indicator */}
+                  {selectedProduct.images.length > 1 && (
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                      {selectedProduct.images.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setSelectedImage(index)}
+                          className={`w-2 h-2 rounded-full transition-colors ${
+                            selectedImage === index
+                              ? "bg-rose-500"
+                              : "bg-white/50 hover:bg-white/80"
+                          }`}
+                        />
+                      ))}
                     </div>
                   )}
                 </div>
