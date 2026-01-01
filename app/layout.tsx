@@ -78,8 +78,8 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    // google: "your-google-verification-code",
-    // yandex: "your-yandex-verification-code",
+    google: "googlea0c951e3477111d8",
+    yandex: "61ca05eb1648abc0",
   },
   alternates: {
     canonical: siteUrl,
