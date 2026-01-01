@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
-import { Search, X, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, X, ChevronDown, ChevronLeft, ChevronRight, ShoppingBag, Plus, Minus, Trash2, MessageCircle } from "lucide-react";
 
 interface Size {
   label: string;
@@ -18,6 +18,17 @@ interface Product {
   isActive: boolean;
 }
 
+interface CartItem {
+  productId: string;
+  productName: string;
+  size: string;
+  quantity: number;
+  price: number;
+  image: string;
+}
+
+const WHATSAPP_NUMBER = "77783536898";
+
 export default function StorePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -25,11 +36,37 @@ export default function StorePage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const catalogRef = useRef<HTMLDivElement>(null);
 
   const minSwipeDistance = 50;
+
+  // Load cart from localStorage
+  useEffect(() => {
+    const savedCart = localStorage.getItem("minawear-cart");
+    if (savedCart) {
+      setCart(JSON.parse(savedCart));
+    }
+  }, []);
+
+  // Save cart to localStorage
+  useEffect(() => {
+    localStorage.setItem("minawear-cart", JSON.stringify(cart));
+  }, [cart]);
+
+  // Track scroll for navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
@@ -113,10 +150,110 @@ export default function StorePage() {
   const openProduct = (product: Product) => {
     setSelectedProduct(product);
     setSelectedImage(0);
+    setSelectedSize(null);
+  };
+
+  const getCartItemCount = () => {
+    return cart.reduce((sum, item) => sum + item.quantity, 0);
+  };
+
+  const getCartTotal = () => {
+    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  };
+
+  const addToCart = () => {
+    if (!selectedProduct || !selectedSize) return;
+
+    const existingIndex = cart.findIndex(
+      (item) => item.productId === selectedProduct._id && item.size === selectedSize
+    );
+
+    if (existingIndex !== -1) {
+      setCart((prev) =>
+        prev.map((item, index) =>
+          index === existingIndex
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      );
+    } else {
+      const newItem: CartItem = {
+        productId: selectedProduct._id,
+        productName: selectedProduct.name,
+        size: selectedSize,
+        quantity: 1,
+        price: selectedProduct.price,
+        image: selectedProduct.images[0] || "",
+      };
+      setCart((prev) => [...prev, newItem]);
+    }
+
+    setSelectedSize(null);
+  };
+
+  const updateCartItemQuantity = (index: number, delta: number) => {
+    setCart((prev) =>
+      prev
+        .map((item, i) =>
+          i === index ? { ...item, quantity: item.quantity + delta } : item
+        )
+        .filter((item) => item.quantity > 0)
+    );
+  };
+
+  const removeFromCart = (index: number) => {
+    setCart((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const getWhatsAppLinkForProduct = (product: Product) => {
+    const message = `Здравствуйте! Меня интересует товар: ${product.name}`;
+    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  };
+
+  const getWhatsAppLinkForCart = () => {
+    if (cart.length === 0) return "#";
+
+    let message = "Здравствуйте! Хочу заказать:\n\n";
+    cart.forEach((item) => {
+      message += `• ${item.productName} (${item.size}) — ${item.quantity} шт. × ${item.price.toLocaleString()} ₸\n`;
+    });
+    message += `\nИтого: ${getCartTotal().toLocaleString()} ₸`;
+
+    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
   };
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
+      {/* Navbar */}
+      <nav
+        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
+          isScrolled
+            ? "bg-neutral-950/80 backdrop-blur-xl border-b border-neutral-800/50"
+            : "bg-transparent"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <Image
+            src="/Logo_minawear.svg"
+            alt="Minawear"
+            width={100}
+            height={28}
+            className="opacity-90"
+          />
+          <button
+            onClick={() => setIsCartOpen(true)}
+            className="relative p-2 text-neutral-300 hover:text-white transition-colors"
+          >
+            <ShoppingBag className="w-6 h-6" />
+            {getCartItemCount() > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-600 rounded-full text-xs flex items-center justify-center font-medium">
+                {getCartItemCount()}
+              </span>
+            )}
+          </button>
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <video
@@ -281,10 +418,10 @@ export default function StorePage() {
           onClick={() => setSelectedProduct(null)}
         >
           <div
-            className="bg-neutral-950 border border-neutral-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+            className="bg-neutral-950 border border-neutral-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="grid md:grid-cols-2">
+            <div className="grid md:grid-cols-2 md:max-h-[90vh]">
               {/* Images */}
               <div className="relative">
                 <div
@@ -396,16 +533,20 @@ export default function StorePage() {
 
                 <div className="flex-1">
                   <p className="text-sm text-neutral-500 uppercase tracking-wider mb-3">
-                    Размеры
+                    Выберите размер
                   </p>
                   <div className="flex gap-2 flex-wrap">
                     {selectedProduct.sizes.map((size) => (
-                      <span
+                      <button
                         key={size.label}
+                        onClick={() => size.quantity > 0 && setSelectedSize(size.label)}
+                        disabled={size.quantity === 0}
                         className={`px-5 py-2.5 rounded-lg border transition-colors ${
                           size.quantity > 0
-                            ? "border-neutral-700 text-white hover:border-rose-800"
-                            : "border-neutral-800 text-neutral-600 line-through"
+                            ? selectedSize === size.label
+                              ? "border-rose-600 bg-rose-600/20 text-white"
+                              : "border-neutral-700 text-white hover:border-rose-800"
+                            : "border-neutral-800 text-neutral-600 line-through cursor-not-allowed"
                         }`}
                       >
                         {size.label}
@@ -414,18 +555,143 @@ export default function StorePage() {
                             ({size.quantity})
                           </span>
                         )}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-neutral-800">
-                  <p className="text-sm text-neutral-500">
-                    Для заказа свяжитесь с нами
-                  </p>
+                <div className="mt-8 space-y-3">
+                  <button
+                    onClick={addToCart}
+                    disabled={!selectedSize}
+                    className={`w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
+                      selectedSize
+                        ? "bg-rose-600 hover:bg-rose-700 text-white"
+                        : "bg-neutral-800 text-neutral-500 cursor-not-allowed"
+                    }`}
+                  >
+                    <ShoppingBag className="w-5 h-5" />
+                    В корзину
+                  </button>
+
+                  <a
+                    href={getWhatsAppLinkForProduct(selectedProduct)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-3 rounded-lg font-medium bg-green-600 hover:bg-green-700 text-white transition-colors flex items-center justify-center gap-2"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    Написать в WhatsApp
+                  </a>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cart Modal */}
+      {isCartOpen && (
+        <div
+          className="fixed inset-0 bg-black/90 z-50 flex items-start justify-end"
+          onClick={() => setIsCartOpen(false)}
+        >
+          <div
+            className="bg-neutral-950 border-l border-neutral-800 h-full w-full max-w-md overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-neutral-950/95 backdrop-blur-xl border-b border-neutral-800 p-4 flex items-center justify-between">
+              <h2 className="text-xl font-light">Корзина</h2>
+              <button
+                onClick={() => setIsCartOpen(false)}
+                className="text-neutral-500 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {cart.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-64 text-neutral-500">
+                <ShoppingBag className="w-16 h-16 mb-4 opacity-50" />
+                <p>Корзина пуста</p>
+              </div>
+            ) : (
+              <>
+                <div className="p-4 space-y-4">
+                  {cart.map((item, index) => (
+                    <div
+                      key={`${item.productId}-${item.size}`}
+                      className="flex gap-4 p-3 bg-neutral-900 rounded-lg"
+                    >
+                      <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-neutral-800">
+                        {item.image ? (
+                          <Image
+                            src={item.image}
+                            alt={item.productName}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-neutral-600 text-xs">
+                            Нет фото
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-white truncate">
+                          {item.productName}
+                        </h3>
+                        <p className="text-sm text-neutral-500">
+                          Размер: {item.size}
+                        </p>
+                        <p className="text-rose-400 font-medium mt-1">
+                          {item.price.toLocaleString()} ₸
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <button
+                            onClick={() => updateCartItemQuantity(index, -1)}
+                            className="w-8 h-8 rounded-lg bg-neutral-800 flex items-center justify-center hover:bg-neutral-700 transition-colors"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="w-8 text-center">{item.quantity}</span>
+                          <button
+                            onClick={() => updateCartItemQuantity(index, 1)}
+                            className="w-8 h-8 rounded-lg bg-neutral-800 flex items-center justify-center hover:bg-neutral-700 transition-colors"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => removeFromCart(index)}
+                            className="ml-auto w-8 h-8 rounded-lg bg-neutral-800 flex items-center justify-center hover:bg-red-900/50 text-neutral-500 hover:text-red-400 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="sticky bottom-0 bg-neutral-950/95 backdrop-blur-xl border-t border-neutral-800 p-4 space-y-4">
+                  <div className="flex justify-between items-center text-lg">
+                    <span className="text-neutral-400">Итого:</span>
+                    <span className="text-white font-medium">
+                      {getCartTotal().toLocaleString()} ₸
+                    </span>
+                  </div>
+                  <a
+                    href={getWhatsAppLinkForCart()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-3 rounded-lg font-medium bg-green-600 hover:bg-green-700 text-white transition-colors flex items-center justify-center gap-2"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    Оформить через WhatsApp
+                  </a>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
