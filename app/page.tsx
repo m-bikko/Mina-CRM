@@ -3,6 +3,13 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { Search, X, ChevronDown, ChevronLeft, ChevronRight, ShoppingBag, Plus, Minus, Trash2, MessageCircle } from "lucide-react";
+import {
+  OrganizationJsonLd,
+  WebsiteJsonLd,
+  StoreJsonLd,
+  ProductListJsonLd,
+  BreadcrumbJsonLd,
+} from "@/components/JsonLd";
 
 interface Size {
   label: string;
@@ -224,6 +231,13 @@ export default function StorePage() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
+      {/* JSON-LD Structured Data for SEO */}
+      <OrganizationJsonLd />
+      <WebsiteJsonLd />
+      <StoreJsonLd />
+      <BreadcrumbJsonLd />
+      {products.length > 0 && <ProductListJsonLd products={products} />}
+
       {/* Navbar */}
       <nav
         className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
