@@ -3,8 +3,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Amina CRM",
-  description: "CRM system for women's clothing store",
+  title: "Minawear",
+  description: "Изысканная женская одежда",
+  icons: {
+    icon: "/Logo_minawear.svg",
+  },
 };
 
 export default function RootLayout({

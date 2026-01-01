@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -57,7 +58,15 @@ export function AdminNav() {
   return (
     <nav className="w-64 min-h-screen bg-secondary/30 border-r">
       <div className="p-6">
-        <h1 className="text-2xl font-bold mb-8">Amina CRM</h1>
+        <div className="mb-8">
+          <Image
+            src="/Logo_minawear.svg"
+            alt="Minawear"
+            width={140}
+            height={40}
+            priority
+          />
+        </div>
         <div className="space-y-2">
           {navItems.map((item) => {
             const Icon = item.icon;

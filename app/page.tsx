@@ -131,9 +131,16 @@ export default function StorePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-neutral-950" />
 
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-7xl font-light tracking-wider mb-4">
-            <span className="text-rose-200">AMINA</span>
-          </h1>
+          <div className="mb-6">
+            <Image
+              src="/Logo_minawear.svg"
+              alt="Minawear"
+              width={280}
+              height={80}
+              className="mx-auto"
+              priority
+            />
+          </div>
           <p className="text-lg md:text-xl text-neutral-300 font-light tracking-wide mb-8">
             Изысканная женская одежда
           </p>
@@ -253,9 +260,16 @@ export default function StorePage() {
 
       {/* Footer */}
       <footer className="border-t border-neutral-900 py-8">
-        <div className="max-w-7xl mx-auto px-4 text-center">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col items-center gap-4">
+          <Image
+            src="/Logo_minawear.svg"
+            alt="Minawear"
+            width={120}
+            height={35}
+            className="opacity-60"
+          />
           <p className="text-neutral-600 text-sm">
-            © {new Date().getFullYear()} Amina. Все права защищены.
+            © {new Date().getFullYear()} Все права защищены.
           </p>
         </div>
       </footer>
