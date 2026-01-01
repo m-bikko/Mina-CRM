@@ -78,13 +78,13 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Дашборд</h1>
+    <div className="container mx-auto p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold">Дашборд</h1>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Период:</span>
           <Select value={period} onValueChange={(value: "week" | "month") => setPeriod(value)}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[140px] md:w-[180px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -95,63 +95,63 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Баланс</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 md:p-6 md:pb-2">
+            <CardTitle className="text-xs md:text-sm font-medium">Баланс</CardTitle>
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg md:text-2xl font-bold">
               {(data.balance || 0).toLocaleString()} ₸
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground hidden md:block">
               Текущие деньги в кассе
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Капитал</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 md:p-6 md:pb-2">
+            <CardTitle className="text-xs md:text-sm font-medium">Капитал</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg md:text-2xl font-bold">
               {(data.capital || 0).toLocaleString()} ₸
             </div>
-            <p className="text-xs text-muted-foreground">
-              Баланс + себестоимость товаров на складе
+            <p className="text-xs text-muted-foreground hidden md:block">
+              Баланс + себестоимость
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Налог к уплате</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 md:p-6 md:pb-2">
+            <CardTitle className="text-xs md:text-sm font-medium">Налог</CardTitle>
             <Receipt className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg md:text-2xl font-bold">
               {(data.taxPayable || 0).toLocaleString()} ₸
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground hidden md:block">
               Накопительным итогом
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Продажи сегодня</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 md:p-6 md:pb-2">
+            <CardTitle className="text-xs md:text-sm font-medium">Сегодня</CardTitle>
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {data.salesToday?.count || 0} чек{data.salesToday?.count === 1 ? "" : "ов"}
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg md:text-2xl font-bold">
+              {data.salesToday?.count || 0} чек.
             </div>
             <p className="text-xs text-muted-foreground">
-              На сумму {(data.salesToday?.amount || 0).toLocaleString()} ₸
+              {(data.salesToday?.amount || 0).toLocaleString()} ₸
             </p>
           </CardContent>
         </Card>
@@ -164,19 +164,22 @@ export default function DashboardPage() {
             Динамика продаж за {period === "week" ? "последнюю неделю" : "последний месяц"}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="h-[400px]">
+        <CardContent className="pl-0 pr-2 md:pl-2 md:pr-6">
+          <div className="h-[250px] md:h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data.salesChart || []}>
+              <LineChart data={data.salesChart || []} margin={{ left: 0, right: 10, top: 10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="date"
+                  tick={{ fontSize: 12 }}
                   tickFormatter={(value) => {
                     const date = new Date(value);
                     return `${date.getDate()}.${date.getMonth() + 1}`;
                   }}
                 />
                 <YAxis
+                  width={45}
+                  tick={{ fontSize: 12 }}
                   tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
                 />
                 <Tooltip
@@ -191,8 +194,8 @@ export default function DashboardPage() {
                   dataKey="amount"
                   stroke="#8884d8"
                   strokeWidth={2}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -200,67 +203,67 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 mt-6">
+      <div className="grid gap-3 md:gap-4 md:grid-cols-2 mt-4 md:mt-6">
         <Card>
-          <CardHeader>
-            <CardTitle>Стоимость товаров на складе</CardTitle>
+          <CardHeader className="p-3 md:p-6">
+            <CardTitle className="text-base md:text-lg">Стоимость на складе</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-2xl md:text-3xl font-bold">
               {(data.inventoryValue || 0).toLocaleString()} ₸
             </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              Общая стоимость всех товаров по ценам продажи
+            <p className="text-xs md:text-sm text-muted-foreground mt-2">
+              По ценам продажи
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Формула капитала</CardTitle>
+          <CardHeader className="p-3 md:p-6">
+            <CardTitle className="text-base md:text-lg">Формула капитала</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between text-sm">
+          <CardContent className="space-y-2 p-3 pt-0 md:p-6 md:pt-0">
+            <div className="flex justify-between text-xs md:text-sm">
               <span className="text-muted-foreground">Баланс:</span>
               <span className="font-semibold">{(data.balance || 0).toLocaleString()} ₸</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">+ Себестоимость товаров на складе:</span>
+            <div className="flex justify-between text-xs md:text-sm">
+              <span className="text-muted-foreground">+ Себестоимость:</span>
               <span className="font-semibold">{(data.inventoryCost || 0).toLocaleString()} ₸</span>
             </div>
             <div className="border-t pt-2 flex justify-between">
-              <span className="font-bold">= Капитал:</span>
-              <span className="font-bold text-lg">{(data.capital || 0).toLocaleString()} ₸</span>
+              <span className="font-bold text-sm md:text-base">= Капитал:</span>
+              <span className="font-bold text-base md:text-lg">{(data.capital || 0).toLocaleString()} ₸</span>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 mt-6">
+      <div className="grid gap-3 md:gap-4 md:grid-cols-2 mt-4 md:mt-6">
         <Card>
-          <CardHeader>
-            <CardTitle>Общая прибыль</CardTitle>
+          <CardHeader className="p-3 md:p-6">
+            <CardTitle className="text-base md:text-lg">Общая прибыль</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-green-600">
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-2xl md:text-3xl font-bold text-green-600">
               {(data.totalProfit || 0).toLocaleString()} ₸
             </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              Разница между выручкой и себестоимостью всех продаж
+            <p className="text-xs md:text-sm text-muted-foreground mt-2">
+              Выручка минус себестоимость
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Себестоимость товаров на складе</CardTitle>
+          <CardHeader className="p-3 md:p-6">
+            <CardTitle className="text-base md:text-lg">Себестоимость на складе</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-2xl md:text-3xl font-bold">
               {(data.inventoryCost || 0).toLocaleString()} ₸
             </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              Общая стоимость остатков по закупочным ценам (FIFO)
+            <p className="text-xs md:text-sm text-muted-foreground mt-2">
+              По закупочным ценам (FIFO)
             </p>
           </CardContent>
         </Card>

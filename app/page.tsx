@@ -347,7 +347,7 @@ export default function StorePage() {
                     className="group cursor-pointer"
                     onClick={() => openProduct(product)}
                   >
-                    <div className="relative aspect-[3/4] bg-neutral-900 rounded-lg overflow-hidden mb-3">
+                    <div className="relative aspect-square bg-neutral-900 rounded-lg overflow-hidden mb-3">
                       {product.images[0] ? (
                         <Image
                           src={product.images[0]}
