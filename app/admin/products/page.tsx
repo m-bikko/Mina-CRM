@@ -6,7 +6,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { ProductListItem } from "@/components/ProductListItem";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
-import { IProduct, ISize, IMeasurement } from "@/models/Product";
+import { IProduct, ISize } from "@/models/Product";
 
 type ViewMode = "grid" | "list";
 
@@ -30,16 +30,10 @@ export default function ProductsPage() {
 
   const [newSize, setNewSize] = useState({
     label: "",
-    measurements: [] as IMeasurement[],
     quantity: 0,
   });
 
   const [editingSizeIndex, setEditingSizeIndex] = useState<number | null>(null);
-
-  const [newMeasurement, setNewMeasurement] = useState({
-    parameterName: "",
-    value: "",
-  });
 
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -147,8 +141,7 @@ export default function ProductsPage() {
       sizes: [],
       images: [],
     });
-    setNewSize({ label: "", measurements: [], quantity: 0 });
-    setNewMeasurement({ parameterName: "", value: "" });
+    setNewSize({ label: "", quantity: 0 });
     setEditingSizeIndex(null);
   };
 
@@ -193,26 +186,6 @@ export default function ProductsPage() {
     }));
   };
 
-  const addMeasurement = (): void => {
-    if (!newMeasurement.parameterName || !newMeasurement.value) {
-      alert("Заполните все поля замера");
-      return;
-    }
-
-    setNewSize((prev) => ({
-      ...prev,
-      measurements: [...prev.measurements, { ...newMeasurement }],
-    }));
-    setNewMeasurement({ parameterName: "", value: "" });
-  };
-
-  const removeMeasurement = (index: number): void => {
-    setNewSize((prev) => ({
-      ...prev,
-      measurements: prev.measurements.filter((_, i) => i !== index),
-    }));
-  };
-
   const addSize = (): void => {
     if (!newSize.label) {
       alert("Укажите размер");
@@ -233,7 +206,7 @@ export default function ProductsPage() {
         sizes: [...prev.sizes, { ...newSize }],
       }));
     }
-    setNewSize({ label: "", measurements: [], quantity: 0 });
+    setNewSize({ label: "", quantity: 0 });
   };
 
   const editSize = (index: number): void => {
@@ -243,7 +216,7 @@ export default function ProductsPage() {
   };
 
   const cancelEditSize = (): void => {
-    setNewSize({ label: "", measurements: [], quantity: 0 });
+    setNewSize({ label: "", quantity: 0 });
     setEditingSizeIndex(null);
   };
 
@@ -398,7 +371,7 @@ export default function ProductsPage() {
                           : "bg-gray-50 border-gray-200"
                       }`}
                     >
-                      <div className="flex justify-between items-start mb-2">
+                      <div className="flex justify-between items-center">
                         <div>
                           <span className="font-medium">{size.label}</span>
                           <span className="ml-2 text-sm text-gray-600">
@@ -427,15 +400,6 @@ export default function ProductsPage() {
                           </button>
                         </div>
                       </div>
-                      {size.measurements.length > 0 && (
-                        <div className="space-y-1 text-sm text-gray-600">
-                          {size.measurements.map((m, mIndex) => (
-                            <div key={mIndex}>
-                              {m.parameterName}: {m.value}
-                            </div>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   ))}
 
@@ -447,60 +411,6 @@ export default function ProductsPage() {
                         setNewSize({ ...newSize, label: e.target.value })
                       }
                     />
-
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Замеры
-                      </label>
-                      {newSize.measurements.map((m, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center gap-2 mb-2 text-sm"
-                        >
-                          <span className="flex-1">
-                            {m.parameterName}: {m.value}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => removeMeasurement(index)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            Удалить
-                          </button>
-                        </div>
-                      ))}
-
-                      <div className="flex gap-2 mb-2">
-                        <Input
-                          placeholder="Параметр (например, грудь)"
-                          value={newMeasurement.parameterName}
-                          onChange={(e) =>
-                            setNewMeasurement({
-                              ...newMeasurement,
-                              parameterName: e.target.value,
-                            })
-                          }
-                        />
-                        <Input
-                          placeholder="Значение (например, 88см)"
-                          value={newMeasurement.value}
-                          onChange={(e) =>
-                            setNewMeasurement({
-                              ...newMeasurement,
-                              value: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={addMeasurement}
-                      >
-                        Добавить замер
-                      </Button>
-                    </div>
 
                     <div className="mt-3 flex gap-2">
                       <Button

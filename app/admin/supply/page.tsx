@@ -34,7 +34,6 @@ interface Product {
   price: number;
   sizes: {
     label: string;
-    measurements: { parameterName: string; value: string }[];
     quantity: number;
   }[];
 }

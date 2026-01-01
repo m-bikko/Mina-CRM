@@ -1,13 +1,7 @@
 import { z } from "zod";
 
-export const measurementSchema = z.object({
-  parameterName: z.string().min(1, "Parameter name is required"),
-  value: z.string().min(1, "Value is required"),
-});
-
 export const sizeSchema = z.object({
   label: z.string().min(1, "Size label is required"),
-  measurements: z.array(measurementSchema).default([]),
   quantity: z.number().min(0, "Quantity must be 0 or greater").default(0),
 });
 

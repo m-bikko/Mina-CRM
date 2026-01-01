@@ -1,13 +1,7 @@
 import mongoose, { Schema, models, Model } from "mongoose";
 
-export interface IMeasurement {
-  parameterName: string;
-  value: string;
-}
-
 export interface ISize {
   label: string;
-  measurements: IMeasurement[];
   quantity: number;
 }
 
@@ -21,29 +15,11 @@ export interface IProduct {
   updatedAt: Date;
 }
 
-const MeasurementSchema = new Schema<IMeasurement>(
-  {
-    parameterName: {
-      type: String,
-      required: true,
-    },
-    value: {
-      type: String,
-      required: true,
-    },
-  },
-  { _id: false }
-);
-
 const SizeSchema = new Schema<ISize>(
   {
     label: {
       type: String,
       required: true,
-    },
-    measurements: {
-      type: [MeasurementSchema],
-      default: [],
     },
     quantity: {
       type: Number,
