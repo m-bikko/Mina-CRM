@@ -19,7 +19,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       {
         $group: {
           _id: null,
-          total: { $sum: "$taxAmount" },
+          total: {
+            $sum: {
+              $add: [
+                { $ifNull: ["$taxAmount", 0] },
+                { $ifNull: ["$deliveryTaxAmount", 0] },
+              ],
+            },
+          },
         },
       },
     ]);

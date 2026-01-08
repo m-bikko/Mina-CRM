@@ -28,6 +28,19 @@ export interface ISale {
   taxAmount: number;
   bankCommissionAmount: number;
   totalCostPrice: number;
+  // Поля доставки
+  deliveryStatus: "not_attached" | "shipped";
+  deliveryType?: "local" | "postal";
+  deliveryAddress?: string;
+  deliveryCharge?: number; // Сколько клиент платит за доставку
+  postalCost?: number; // Стоимость услуг почты (наш расход)
+  deliveryPaymentType?: Types.ObjectId;
+  deliveryPaymentTypeName?: string;
+  deliveryTaxRateSnapshot?: number;
+  deliveryBankCommissionRateSnapshot?: number;
+  deliveryTaxAmount?: number; // Налог с доставки (накопительный)
+  deliveryBankCommissionAmount?: number; // Комиссия банка с доставки
+  deliveryBalanceAmount?: number; // Сколько реально добавляется в баланс
   createdAt: Date;
   updatedAt: Date;
 }
@@ -153,6 +166,53 @@ const SaleSchema = new Schema<ISale>(
       required: true,
       min: 0,
       default: 0,
+    },
+    // Поля доставки
+    deliveryStatus: {
+      type: String,
+      enum: ["not_attached", "shipped"],
+      default: "not_attached",
+    },
+    deliveryType: {
+      type: String,
+      enum: ["local", "postal"],
+    },
+    deliveryAddress: {
+      type: String,
+    },
+    deliveryCharge: {
+      type: Number,
+      min: 0,
+    },
+    postalCost: {
+      type: Number,
+      min: 0,
+    },
+    deliveryPaymentType: {
+      type: Schema.Types.ObjectId,
+      ref: "PaymentType",
+    },
+    deliveryPaymentTypeName: {
+      type: String,
+    },
+    deliveryTaxRateSnapshot: {
+      type: Number,
+      min: 0,
+    },
+    deliveryBankCommissionRateSnapshot: {
+      type: Number,
+      min: 0,
+    },
+    deliveryTaxAmount: {
+      type: Number,
+      min: 0,
+    },
+    deliveryBankCommissionAmount: {
+      type: Number,
+      min: 0,
+    },
+    deliveryBalanceAmount: {
+      type: Number,
     },
   },
   {

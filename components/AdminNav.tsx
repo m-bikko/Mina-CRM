@@ -15,6 +15,7 @@ import {
   PackageMinus,
   Menu,
   X,
+  Send,
 } from "lucide-react";
 
 const navItems = [
@@ -37,6 +38,11 @@ const navItems = [
     title: "Продажи",
     href: "/admin/sales",
     icon: ShoppingCart,
+  },
+  {
+    title: "Доставка",
+    href: "/admin/delivery",
+    icon: Send,
   },
   {
     title: "Списания",
