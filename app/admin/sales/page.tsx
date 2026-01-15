@@ -58,14 +58,23 @@ interface Sale {
   date: string;
   customerPhone: string;
   paymentTypeName: string;
+  deliveryStatus: "not_attached" | "shipped";
   items: SaleItem[];
   totalAmount: number;
   taxAmount: number;
   bankCommissionAmount: number;
 }
 
+interface ReturnRecord {
+  _id: string;
+  sale: string;
+}
+
+type SaleStatus = "new" | "shipped" | "returned";
+
 export default function SalesPage() {
   const [sales, setSales] = useState<Sale[]>([]);
+  const [returns, setReturns] = useState<ReturnRecord[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [paymentTypes, setPaymentTypes] = useState<PaymentType[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -82,6 +91,7 @@ export default function SalesPage() {
 
   useEffect(() => {
     fetchSales();
+    fetchReturns();
     fetchProducts();
     fetchPaymentTypes();
   }, []);
@@ -95,6 +105,48 @@ export default function SalesPage() {
       }
     } catch (error) {
       console.error("Error fetching sales:", error);
+    }
+  };
+
+  const fetchReturns = async () => {
+    try {
+      const response = await fetch("/api/returns");
+      const data = await response.json();
+      if (data.success) {
+        setReturns(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching returns:", error);
+    }
+  };
+
+  const returnedSaleIds = new Set(returns.map((r) => r.sale));
+
+  const getSaleStatus = (sale: Sale): SaleStatus => {
+    if (returnedSaleIds.has(sale._id)) return "returned";
+    if (sale.deliveryStatus === "shipped") return "shipped";
+    return "new";
+  };
+
+  const getStatusLabel = (status: SaleStatus): string => {
+    switch (status) {
+      case "returned":
+        return "Возврат";
+      case "shipped":
+        return "Отправлен";
+      case "new":
+        return "Новая";
+    }
+  };
+
+  const getStatusColor = (status: SaleStatus): string => {
+    switch (status) {
+      case "returned":
+        return "text-red-600 bg-red-50";
+      case "shipped":
+        return "text-blue-600 bg-blue-50";
+      case "new":
+        return "text-green-600 bg-green-50";
     }
   };
 
@@ -461,6 +513,7 @@ export default function SalesPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Дата</TableHead>
+              <TableHead>Статус</TableHead>
               <TableHead>Клиент</TableHead>
               <TableHead>Тип оплаты</TableHead>
               <TableHead>Товаров</TableHead>
@@ -474,15 +527,22 @@ export default function SalesPage() {
           <TableBody>
             {sales.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground">
+                <TableCell colSpan={10} className="text-center text-muted-foreground">
                   Нет продаж
                 </TableCell>
               </TableRow>
             ) : (
-              sales.map((sale) => (
+              sales.map((sale) => {
+                const status = getSaleStatus(sale);
+                return (
                 <TableRow key={sale._id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedSale(sale)}>
                   <TableCell>
                     {new Date(sale.date).toLocaleDateString("ru-RU")}
+                  </TableCell>
+                  <TableCell>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+                      {getStatusLabel(status)}
+                    </span>
                   </TableCell>
                   <TableCell>{sale.customerPhone}</TableCell>
                   <TableCell>{sale.paymentTypeName}</TableCell>
@@ -505,7 +565,8 @@ export default function SalesPage() {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -523,6 +584,12 @@ export default function SalesPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Дата</p>
                   <p className="font-medium">{new Date(selectedSale.date).toLocaleString("ru-RU")}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Статус</p>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(getSaleStatus(selectedSale))}`}>
+                    {getStatusLabel(getSaleStatus(selectedSale))}
+                  </span>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Клиент</p>

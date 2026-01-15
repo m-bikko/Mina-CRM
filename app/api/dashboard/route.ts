@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/mongodb";
 import Product from "@/models/Product";
 import Sale from "@/models/Sale";
+import Return from "@/models/Return";
 import InventoryBatch from "@/models/InventoryBatch";
 import FinancialStats from "@/models/FinancialStats";
 
@@ -30,7 +31,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         },
       },
     ]);
-    const taxPayable = taxPayableResult[0]?.total || 0;
+    const saleTaxTotal = taxPayableResult[0]?.total || 0;
+
+    const returnTaxResult = await Return.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: { $ifNull: ["$taxAmountReversed", 0] } },
+        },
+      },
+    ]);
+    const returnTaxTotal = returnTaxResult[0]?.total || 0;
+
+    const taxPayable = saleTaxTotal - returnTaxTotal;
 
     // Стоимость товаров на складе по себестоимости (из партий)
     const inventoryCostResult = await InventoryBatch.aggregate([
@@ -146,7 +159,36 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         },
       },
     ]);
-    const totalProfit = profitResult[0]?.total || 0;
+    const salesProfit = profitResult[0]?.total || 0;
+
+    // Убыток от возвратов (возвращаем сумму, но получаем обратно себестоимость и экономим налог)
+    // Убыток = totalAmount - totalCostPrice - taxAmountReversed
+    const returnLossResult = await Return.aggregate([
+      {
+        $project: {
+          loss: {
+            $subtract: [
+              "$totalAmount",
+              {
+                $add: [
+                  { $ifNull: ["$totalCostPrice", 0] },
+                  { $ifNull: ["$taxAmountReversed", 0] },
+                ],
+              },
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$loss" },
+        },
+      },
+    ]);
+    const returnLoss = returnLossResult[0]?.total || 0;
+
+    const totalProfit = salesProfit - returnLoss;
 
     return NextResponse.json({
       success: true,

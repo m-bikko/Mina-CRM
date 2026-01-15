@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   Send,
+  RotateCcw,
 } from "lucide-react";
 
 const navItems = [
@@ -43,6 +44,11 @@ const navItems = [
     title: "Доставка",
     href: "/admin/delivery",
     icon: Send,
+  },
+  {
+    title: "Возвраты",
+    href: "/admin/returns",
+    icon: RotateCcw,
   },
   {
     title: "Списания",

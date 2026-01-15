@@ -1,7 +1,7 @@
 import mongoose, { Schema, models, Model, Types } from "mongoose";
 
 export type TransactionType = "INCOME" | "EXPENSE";
-export type TransactionCategory = "SALE" | "SUPPLY" | "MANUAL_ADJUSTMENT" | "WRITE_OFF";
+export type TransactionCategory = "SALE" | "SUPPLY" | "MANUAL_ADJUSTMENT" | "WRITE_OFF" | "RETURN";
 
 export interface ITransaction {
   type: TransactionType;
@@ -23,7 +23,7 @@ const TransactionSchema = new Schema<ITransaction>(
     },
     category: {
       type: String,
-      enum: ["SALE", "SUPPLY", "MANUAL_ADJUSTMENT", "WRITE_OFF"],
+      enum: ["SALE", "SUPPLY", "MANUAL_ADJUSTMENT", "WRITE_OFF", "RETURN"],
       required: true,
     },
     amount: {
