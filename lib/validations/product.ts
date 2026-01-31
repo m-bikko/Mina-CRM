@@ -8,6 +8,7 @@ export const sizeSchema = z.object({
 export const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   price: z.number().min(0, "Price must be a positive number"),
+  discountPrice: z.number().min(0, "Discount price must be a positive number").optional(),
   images: z.array(z.string().url()).default([]),
   sizes: z.array(sizeSchema).default([]),
   isActive: z.boolean().default(true),

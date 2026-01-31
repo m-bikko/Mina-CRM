@@ -8,6 +8,7 @@ export interface ISize {
 export interface IProduct {
   name: string;
   price: number;
+  discountPrice?: number;
   images: string[];
   sizes: ISize[];
   isActive: boolean;
@@ -43,6 +44,10 @@ const ProductSchema = new Schema<IProduct>(
     price: {
       type: Number,
       required: true,
+      min: 0,
+    },
+    discountPrice: {
+      type: Number,
       min: 0,
     },
     images: {

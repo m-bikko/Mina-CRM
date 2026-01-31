@@ -26,6 +26,7 @@ export default function ProductsPage() {
   const [formData, setFormData] = useState({
     name: "",
     price: "",
+    discountPrice: "",
     sizes: [] as ISize[],
     images: [] as string[],
     relatedProducts: [] as string[],
@@ -64,6 +65,7 @@ export default function ProductsPage() {
       const payload = {
         name: formData.name,
         price: parseFloat(formData.price),
+        discountPrice: formData.discountPrice ? parseFloat(formData.discountPrice) : undefined,
         sizes: formData.sizes,
         images: formData.images,
         relatedProducts: formData.relatedProducts,
@@ -137,6 +139,7 @@ export default function ProductsPage() {
       setFormData({
         name: product.name,
         price: product.price.toString(),
+        discountPrice: product.discountPrice ? product.discountPrice.toString() : "",
         sizes: product.sizes.map((s) => ({ label: s.label, quantity: s.quantity })),
         images: [...product.images],
         relatedProducts: relatedIds,
@@ -151,6 +154,7 @@ export default function ProductsPage() {
     setFormData({
       name: "",
       price: "",
+      discountPrice: "",
       sizes: [],
       images: [],
       relatedProducts: [],
@@ -331,31 +335,28 @@ export default function ProductsPage() {
             <div className="flex gap-2 bg-white rounded-lg p-1 shadow-sm">
               <button
                 onClick={() => setViewMode("grid")}
-                className={`px-4 py-2 rounded-md transition-colors ${
-                  viewMode === "grid"
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
+                className={`px-4 py-2 rounded-md transition-colors ${viewMode === "grid"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
+                  }`}
               >
                 Карточки
               </button>
               <button
                 onClick={() => setViewMode("list")}
-                className={`px-4 py-2 rounded-md transition-colors ${
-                  viewMode === "list"
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
+                className={`px-4 py-2 rounded-md transition-colors ${viewMode === "list"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
+                  }`}
               >
                 Список
               </button>
               <button
                 onClick={() => setViewMode("sort")}
-                className={`px-4 py-2 rounded-md transition-colors ${
-                  viewMode === "sort"
-                    ? "bg-green-600 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
+                className={`px-4 py-2 rounded-md transition-colors ${viewMode === "sort"
+                  ? "bg-green-600 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
+                  }`}
               >
                 Сортировка
               </button>
@@ -412,19 +413,17 @@ export default function ProductsPage() {
                 onDragStart={() => handleDragStart(index)}
                 onDragOver={(e) => handleDragOver(e, index)}
                 onDragEnd={handleDragEnd}
-                className={`flex items-center gap-4 bg-white rounded-lg shadow-sm p-4 cursor-move border-2 transition-colors ${
-                  draggedIndex === index ? "border-blue-500 bg-blue-50" : "border-transparent"
-                }`}
+                className={`flex items-center gap-4 bg-white rounded-lg shadow-sm p-4 cursor-move border-2 transition-colors ${draggedIndex === index ? "border-blue-500 bg-blue-50" : "border-transparent"
+                  }`}
               >
                 <div className="flex flex-col gap-1">
                   <button
                     onClick={() => moveProductUp(index)}
                     disabled={index === 0}
-                    className={`p-1 rounded ${
-                      index === 0
-                        ? "text-gray-300 cursor-not-allowed"
-                        : "text-gray-600 hover:bg-gray-100"
-                    }`}
+                    className={`p-1 rounded ${index === 0
+                      ? "text-gray-300 cursor-not-allowed"
+                      : "text-gray-600 hover:bg-gray-100"
+                      }`}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
@@ -433,11 +432,10 @@ export default function ProductsPage() {
                   <button
                     onClick={() => moveProductDown(index)}
                     disabled={index === products.length - 1}
-                    className={`p-1 rounded ${
-                      index === products.length - 1
-                        ? "text-gray-300 cursor-not-allowed"
-                        : "text-gray-600 hover:bg-gray-100"
-                    }`}
+                    className={`p-1 rounded ${index === products.length - 1
+                      ? "text-gray-300 cursor-not-allowed"
+                      : "text-gray-600 hover:bg-gray-100"
+                      }`}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -502,6 +500,16 @@ export default function ProductsPage() {
                 required
               />
 
+              <Input
+                label="Цена со скидкой (₸) - Опционально"
+                type="number"
+                step="0.01"
+                value={formData.discountPrice}
+                onChange={(e) =>
+                  setFormData({ ...formData, discountPrice: e.target.value })
+                }
+              />
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Изображения
@@ -546,11 +554,10 @@ export default function ProductsPage() {
                           type="button"
                           onClick={() => moveImageUp(index)}
                           disabled={index === 0}
-                          className={`px-2 py-1 text-xs rounded ${
-                            index === 0
-                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                          }`}
+                          className={`px-2 py-1 text-xs rounded ${index === 0
+                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                            }`}
                         >
                           ←
                         </button>
@@ -558,11 +565,10 @@ export default function ProductsPage() {
                           type="button"
                           onClick={() => moveImageDown(index)}
                           disabled={index === formData.images.length - 1}
-                          className={`px-2 py-1 text-xs rounded ${
-                            index === formData.images.length - 1
-                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                          }`}
+                          className={`px-2 py-1 text-xs rounded ${index === formData.images.length - 1
+                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                            }`}
                         >
                           →
                         </button>
@@ -580,11 +586,10 @@ export default function ProductsPage() {
                   {formData.sizes.map((size, sizeIndex) => (
                     <div
                       key={sizeIndex}
-                      className={`p-3 rounded-lg border ${
-                        editingSizeIndex === sizeIndex
-                          ? "bg-blue-50 border-blue-300"
-                          : "bg-gray-50 border-gray-200"
-                      }`}
+                      className={`p-3 rounded-lg border ${editingSizeIndex === sizeIndex
+                        ? "bg-blue-50 border-blue-300"
+                        : "bg-gray-50 border-gray-200"
+                        }`}
                     >
                       <div className="flex justify-between items-center">
                         <div>

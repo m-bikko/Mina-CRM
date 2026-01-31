@@ -32,6 +32,7 @@ interface Product {
   _id: string;
   name: string;
   price: number;
+  discountPrice?: number;
   sizes: {
     label: string;
     quantity: number;
@@ -202,7 +203,7 @@ export default function SalesPage() {
       productName: product.name,
       sizeLabel: selectedSize,
       quantity: qty,
-      priceAtSale: product.price,
+      priceAtSale: product.discountPrice || product.price,
     };
 
     setSaleItems([...saleItems, newItem]);
@@ -375,7 +376,8 @@ export default function SalesPage() {
                       <SelectContent>
                         {products.map((product) => (
                           <SelectItem key={product._id} value={product._id}>
-                            {product.name} - {product.price} ₸
+                            {product.name} - {product.discountPrice || product.price} ₸
+                            {product.discountPrice && ` (скидка)`}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -535,36 +537,36 @@ export default function SalesPage() {
               sales.map((sale) => {
                 const status = getSaleStatus(sale);
                 return (
-                <TableRow key={sale._id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedSale(sale)}>
-                  <TableCell>
-                    {new Date(sale.date).toLocaleDateString("ru-RU")}
-                  </TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
-                      {getStatusLabel(status)}
-                    </span>
-                  </TableCell>
-                  <TableCell>{sale.customerPhone}</TableCell>
-                  <TableCell>{sale.paymentTypeName}</TableCell>
-                  <TableCell>{sale.items?.length || 0}</TableCell>
-                  <TableCell className="font-semibold">
-                    {(sale.totalAmount || 0).toLocaleString()} ₸
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {(sale.taxAmount || 0).toLocaleString()} ₸
-                  </TableCell>
-                  <TableCell className="text-orange-600">
-                    {(sale.bankCommissionAmount || 0) > 0 ? `-${(sale.bankCommissionAmount || 0).toLocaleString()} ₸` : '—'}
-                  </TableCell>
-                  <TableCell className="font-semibold text-green-600">
-                    {((sale.totalAmount || 0) - (sale.bankCommissionAmount || 0)).toLocaleString()} ₸
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedSale(sale); }}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
+                  <TableRow key={sale._id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedSale(sale)}>
+                    <TableCell>
+                      {new Date(sale.date).toLocaleDateString("ru-RU")}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+                        {getStatusLabel(status)}
+                      </span>
+                    </TableCell>
+                    <TableCell>{sale.customerPhone}</TableCell>
+                    <TableCell>{sale.paymentTypeName}</TableCell>
+                    <TableCell>{sale.items?.length || 0}</TableCell>
+                    <TableCell className="font-semibold">
+                      {(sale.totalAmount || 0).toLocaleString()} ₸
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {(sale.taxAmount || 0).toLocaleString()} ₸
+                    </TableCell>
+                    <TableCell className="text-orange-600">
+                      {(sale.bankCommissionAmount || 0) > 0 ? `-${(sale.bankCommissionAmount || 0).toLocaleString()} ₸` : '—'}
+                    </TableCell>
+                    <TableCell className="font-semibold text-green-600">
+                      {((sale.totalAmount || 0) - (sale.bankCommissionAmount || 0)).toLocaleString()} ₸
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedSale(sale); }}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 );
               })
             )}

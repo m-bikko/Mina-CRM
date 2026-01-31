@@ -20,6 +20,7 @@ interface RelatedProduct {
   _id: string;
   name: string;
   price: number;
+  discountPrice?: number;
   images: string[];
 }
 
@@ -27,6 +28,7 @@ interface Product {
   _id: string;
   name: string;
   price: number;
+  discountPrice?: number;
   images: string[];
   sizes: Size[];
   isActive: boolean;
@@ -197,7 +199,7 @@ export default function StorePage() {
         productName: selectedProduct.name,
         size: selectedSize,
         quantity: 1,
-        price: selectedProduct.price,
+        price: selectedProduct.discountPrice || selectedProduct.price,
         image: selectedProduct.images[0] || "",
       };
       setCart((prev) => [...prev, newItem]);
@@ -248,11 +250,10 @@ export default function StorePage() {
 
       {/* Navbar */}
       <nav
-        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
-          isScrolled
-            ? "bg-neutral-950/80 backdrop-blur-xl border-b border-neutral-800/50"
-            : "bg-transparent"
-        }`}
+        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${isScrolled
+          ? "bg-neutral-950/80 backdrop-blur-xl border-b border-neutral-800/50"
+          : "bg-transparent"
+          }`}
       >
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <Image
@@ -394,9 +395,20 @@ export default function StorePage() {
                     <h3 className="font-light text-neutral-200 group-hover:text-rose-200 transition-colors truncate">
                       {product.name}
                     </h3>
-                    <p className="text-rose-400 font-medium mt-1">
-                      {product.price.toLocaleString()} ₸
-                    </p>
+                    {product.discountPrice ? (
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-rose-400 font-medium">
+                          {product.discountPrice.toLocaleString()} ₸
+                        </span>
+                        <span className="text-neutral-600 line-through text-xs">
+                          {product.price.toLocaleString()} ₸
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-rose-400 font-medium mt-1">
+                        {product.price.toLocaleString()} ₸
+                      </p>
+                    )}
                     {availableSizes.length > 0 && (
                       <div className="flex gap-1.5 mt-2 flex-wrap">
                         {availableSizes.map((size) => (
@@ -495,11 +507,10 @@ export default function StorePage() {
                         <button
                           key={index}
                           onClick={() => setSelectedImage(index)}
-                          className={`w-2 h-2 rounded-full transition-colors ${
-                            selectedImage === index
-                              ? "bg-rose-500"
-                              : "bg-white/50 hover:bg-white/80"
-                          }`}
+                          className={`w-2 h-2 rounded-full transition-colors ${selectedImage === index
+                            ? "bg-rose-500"
+                            : "bg-white/50 hover:bg-white/80"
+                            }`}
                         />
                       ))}
                     </div>
@@ -511,11 +522,10 @@ export default function StorePage() {
                       <button
                         key={index}
                         onClick={() => setSelectedImage(index)}
-                        className={`relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-colors ${
-                          selectedImage === index
-                            ? "border-rose-700"
-                            : "border-transparent hover:border-neutral-700"
-                        }`}
+                        className={`relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-colors ${selectedImage === index
+                          ? "border-rose-700"
+                          : "border-transparent hover:border-neutral-700"
+                          }`}
                       >
                         <Image
                           src={img}
@@ -549,9 +559,20 @@ export default function StorePage() {
                 <h2 className="text-2xl md:text-3xl font-light text-white mb-2">
                   {selectedProduct.name}
                 </h2>
-                <p className="text-2xl md:text-3xl text-rose-400 font-medium mb-6">
-                  {selectedProduct.price.toLocaleString()} ₸
-                </p>
+                {selectedProduct.discountPrice ? (
+                  <div className="flex items-center gap-3 mb-6">
+                    <p className="text-2xl md:text-3xl text-rose-500 font-bold">
+                      {selectedProduct.discountPrice.toLocaleString()} ₸
+                    </p>
+                    <p className="text-xl text-neutral-500 line-through">
+                      {selectedProduct.price.toLocaleString()} ₸
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-2xl md:text-3xl text-rose-400 font-medium mb-6">
+                    {selectedProduct.price.toLocaleString()} ₸
+                  </p>
+                )}
 
                 <div className="flex-1">
                   <p className="text-sm text-neutral-500 uppercase tracking-wider mb-3">
@@ -563,13 +584,12 @@ export default function StorePage() {
                         key={size.label}
                         onClick={() => size.quantity > 0 && setSelectedSize(size.label)}
                         disabled={size.quantity === 0}
-                        className={`px-5 py-2.5 rounded-lg border transition-colors ${
-                          size.quantity > 0
-                            ? selectedSize === size.label
-                              ? "border-rose-600 bg-rose-600/20 text-white"
-                              : "border-neutral-700 text-white hover:border-rose-800"
-                            : "border-neutral-800 text-neutral-600 line-through cursor-not-allowed"
-                        }`}
+                        className={`px-5 py-2.5 rounded-lg border transition-colors ${size.quantity > 0
+                          ? selectedSize === size.label
+                            ? "border-rose-600 bg-rose-600/20 text-white"
+                            : "border-neutral-700 text-white hover:border-rose-800"
+                          : "border-neutral-800 text-neutral-600 line-through cursor-not-allowed"
+                          }`}
                       >
                         {size.label}
                         {size.quantity > 0 && (
@@ -586,11 +606,10 @@ export default function StorePage() {
                   <button
                     onClick={addToCart}
                     disabled={!selectedSize}
-                    className={`w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
-                      selectedSize
-                        ? "bg-rose-600 hover:bg-rose-700 text-white"
-                        : "bg-neutral-800 text-neutral-500 cursor-not-allowed"
-                    }`}
+                    className={`w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${selectedSize
+                      ? "bg-rose-600 hover:bg-rose-700 text-white"
+                      : "bg-neutral-800 text-neutral-500 cursor-not-allowed"
+                      }`}
                   >
                     <ShoppingBag className="w-5 h-5" />
                     В корзину
@@ -641,9 +660,20 @@ export default function StorePage() {
                           </div>
                           <div className="p-3">
                             <p className="text-sm text-white truncate">{related.name}</p>
-                            <p className="text-sm text-rose-400 mt-1">
-                              {related.price.toLocaleString()} ₸
-                            </p>
+                            {related.discountPrice ? (
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-sm text-rose-400 font-medium">
+                                  {related.discountPrice.toLocaleString()} ₸
+                                </span>
+                                <span className="text-xs text-neutral-600 line-through">
+                                  {related.price.toLocaleString()} ₸
+                                </span>
+                              </div>
+                            ) : (
+                              <p className="text-sm text-rose-400 mt-1">
+                                {related.price.toLocaleString()} ₸
+                              </p>
+                            )}
                           </div>
                         </button>
                       ))}

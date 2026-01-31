@@ -31,7 +31,22 @@ export function ProductCard({
       </div>
       <div className="p-4">
         <h3 className="font-semibold text-lg mb-2 truncate">{product.name}</h3>
-        <p className="text-gray-600 mb-3">{product.price} ₸</p>
+        <div className="mb-3">
+          {product.discountPrice ? (
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-red-600 text-lg">
+                {product.discountPrice.toLocaleString()} ₸
+              </span>
+              <span className="text-gray-400 line-through text-sm">
+                {product.price.toLocaleString()} ₸
+              </span>
+            </div>
+          ) : (
+            <p className="text-gray-600 font-medium">
+              {product.price.toLocaleString()} ₸
+            </p>
+          )}
+        </div>
         <div className="flex gap-2 mb-3 flex-wrap">
           {product.sizes.map((size, index) => (
             <span
