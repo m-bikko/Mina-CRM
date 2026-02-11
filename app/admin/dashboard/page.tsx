@@ -24,7 +24,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Wallet, TrendingUp, Receipt, ShoppingBag } from "lucide-react";
+import { Wallet, TrendingUp, Receipt, ShoppingBag, Eye } from "lucide-react";
 
 interface DashboardData {
   balance: number;
@@ -43,6 +43,14 @@ interface DashboardData {
   }[];
 }
 
+interface PageVisitsData {
+  visits: {
+    date: string;
+    count: number;
+  }[];
+  totalVisits: number;
+}
+
 // Форматирование числа с округлением до 2 знаков после запятой
 const formatMoney = (num: number) => {
   return (Math.round((num || 0) * 100) / 100).toLocaleString();
@@ -52,6 +60,8 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [period, setPeriod] = useState<"week" | "month">("week");
   const [loading, setLoading] = useState(true);
+  const [visitsData, setVisitsData] = useState<PageVisitsData | null>(null);
+  const [visitsLoading, setVisitsLoading] = useState(true);
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
@@ -68,9 +78,25 @@ export default function DashboardPage() {
     }
   }, [period]);
 
+  const fetchPageVisits = useCallback(async () => {
+    setVisitsLoading(true);
+    try {
+      const response = await fetch(`/api/page-visits?period=${period}`);
+      const result = await response.json();
+      if (result.success) {
+        setVisitsData(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching page visits:", error);
+    } finally {
+      setVisitsLoading(false);
+    }
+  }, [period]);
+
   useEffect(() => {
     fetchDashboardData();
-  }, [fetchDashboardData]);
+    fetchPageVisits();
+  }, [fetchDashboardData, fetchPageVisits]);
 
   if (loading || !data) {
     return (
@@ -205,6 +231,75 @@ export default function DashboardPage() {
               </LineChart>
             </ResponsiveContainer>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Page Visits Chart */}
+      <Card className="mt-4 md:mt-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Посещения сайта</CardTitle>
+              <CardDescription>
+                Количество посещений за {period === "week" ? "последнюю неделю" : "последний месяц"}
+              </CardDescription>
+            </div>
+            {visitsData && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Eye className="h-4 w-4" />
+                <span className="text-lg md:text-2xl font-bold text-foreground">
+                  {visitsData.totalVisits}
+                </span>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pl-0 pr-2 md:pl-2 md:pr-6">
+          {visitsLoading ? (
+            <div className="h-[250px] md:h-[350px] flex items-center justify-center">
+              <div className="text-muted-foreground">Загрузка...</div>
+            </div>
+          ) : visitsData && visitsData.visits.length > 0 ? (
+            <div className="h-[250px] md:h-[350px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={visitsData.visits} margin={{ left: 0, right: 10, top: 10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      return `${date.getDate()}.${date.getMonth() + 1}`;
+                    }}
+                  />
+                  <YAxis
+                    width={45}
+                    tick={{ fontSize: 12 }}
+                    allowDecimals={false}
+                  />
+                  <Tooltip
+                    formatter={(value) => [value, "Посещений"]}
+                    labelFormatter={(label) => {
+                      const date = new Date(label);
+                      return date.toLocaleDateString("ru-RU");
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-[250px] md:h-[350px] flex items-center justify-center">
+              <div className="text-muted-foreground">Нет данных за выбранный период</div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

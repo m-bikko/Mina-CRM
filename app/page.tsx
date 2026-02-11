@@ -125,6 +125,22 @@ export default function StorePage() {
     fetchProducts();
   }, []);
 
+  // Track page visit
+  useEffect(() => {
+    const recordVisit = async () => {
+      try {
+        await fetch("/api/page-visits", {
+          method: "POST",
+        });
+      } catch (error) {
+        // Silently fail - don't interrupt user experience
+        console.error("Failed to record page visit:", error);
+      }
+    };
+
+    recordVisit();
+  }, []);
+
   useEffect(() => {
     if (searchQuery.trim() === "") {
       setFilteredProducts(products);
