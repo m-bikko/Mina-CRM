@@ -69,23 +69,43 @@ export default function StorePage() {
     if (!video) return;
 
     const events: Array<keyof WindowEventMap> = ["pointerdown", "touchstart", "keydown"];
+    let fadeInterval: ReturnType<typeof setInterval> | undefined;
+
+    const fadeInSound = () => {
+      video.volume = 0;
+      video.muted = false;
+      fadeInterval = setInterval(() => {
+        const next = Math.min(video.volume + 0.05, 1);
+        video.volume = next;
+        if (next >= 1 && fadeInterval) {
+          clearInterval(fadeInterval);
+        }
+      }, 150);
+    };
 
     const unmute = () => {
-      video.muted = false;
+      fadeInSound();
       video.play().catch(() => undefined);
       events.forEach((event) => window.removeEventListener(event, unmute));
     };
 
+    video.volume = 0;
     video.muted = false;
     video
       .play()
+      .then(() => fadeInSound())
       .catch(() => {
         video.muted = true;
         video.play().catch(() => undefined);
         events.forEach((event) => window.addEventListener(event, unmute));
       });
 
-    return () => events.forEach((event) => window.removeEventListener(event, unmute));
+    return () => {
+      if (fadeInterval) {
+        clearInterval(fadeInterval);
+      }
+      events.forEach((event) => window.removeEventListener(event, unmute));
+    };
   }, []);
 
   // Load cart from localStorage
