@@ -59,23 +59,47 @@ export default function StorePage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [soundUnlocked, setSoundUnlocked] = useState(false);
+  const [isInHeroZone, setIsInHeroZone] = useState(true);
   const catalogRef = useRef<HTMLDivElement>(null);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
 
   const minSwipeDistance = 50;
 
   useEffect(() => {
+    const events: Array<keyof WindowEventMap> = ["pointerup", "touchend", "keydown"];
+
+    const unlock = () => {
+      setSoundUnlocked(true);
+      events.forEach((event) => window.removeEventListener(event, unlock));
+    };
+
+    events.forEach((event) => window.addEventListener(event, unlock));
+    return () => events.forEach((event) => window.removeEventListener(event, unlock));
+  }, []);
+
+  useEffect(() => {
     const video = heroVideoRef.current;
     if (!video) return;
 
-    const events: Array<keyof WindowEventMap> = ["pointerdown", "touchstart", "keydown"];
+    const soundOn = soundUnlocked && isInHeroZone && !selectedProduct;
     let fadeInterval: ReturnType<typeof setInterval> | undefined;
+    let pauseGuard: ReturnType<typeof setTimeout> | undefined;
 
-    const enableSound = () => {
-      events.forEach((event) => window.removeEventListener(event, enableSound));
-      video.volume = 0;
+    if (soundOn) {
       video.muted = false;
-      video.play().catch(() => undefined);
+      video.play().catch(() => {
+        video.muted = true;
+        video.play().catch(() => undefined);
+        setSoundUnlocked(false);
+      });
+      pauseGuard = setTimeout(() => {
+        if (video.paused) {
+          video.muted = true;
+          video.play().catch(() => undefined);
+          setSoundUnlocked(false);
+        }
+      }, 300);
       fadeInterval = setInterval(() => {
         const next = Math.min(video.volume + 0.05, 1);
         video.volume = next;
@@ -83,18 +107,31 @@ export default function StorePage() {
           clearInterval(fadeInterval);
         }
       }, 150);
-    };
-
-    video.play().catch(() => undefined);
-    events.forEach((event) => window.addEventListener(event, enableSound));
+    } else {
+      if (video.paused) {
+        video.play().catch(() => undefined);
+      }
+      fadeInterval = setInterval(() => {
+        const next = Math.max(video.volume - 0.1, 0);
+        video.volume = next;
+        if (next <= 0) {
+          video.muted = true;
+          if (fadeInterval) {
+            clearInterval(fadeInterval);
+          }
+        }
+      }, 50);
+    }
 
     return () => {
       if (fadeInterval) {
         clearInterval(fadeInterval);
       }
-      events.forEach((event) => window.removeEventListener(event, enableSound));
+      if (pauseGuard) {
+        clearTimeout(pauseGuard);
+      }
     };
-  }, []);
+  }, [soundUnlocked, isInHeroZone, selectedProduct]);
 
   // Load cart from localStorage
   useEffect(() => {
@@ -113,7 +150,9 @@ export default function StorePage() {
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
+      setIsInHeroZone(window.scrollY < window.innerHeight * 0.3);
     };
+    handleScroll();
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
