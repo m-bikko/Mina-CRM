@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -17,6 +17,7 @@ import {
   X,
   Send,
   RotateCcw,
+  LogOut,
 } from "lucide-react";
 
 const navItems = [
@@ -69,7 +70,14 @@ const navItems = [
 
 export function AdminNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleLogout = async (): Promise<void> => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.replace("/login");
+    router.refresh();
+  };
 
   // Close sidebar on route change
   useEffect(() => {
@@ -163,6 +171,13 @@ export function AdminNav() {
               );
             })}
           </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-muted-foreground hover:bg-secondary hover:text-foreground w-full"
+          >
+            <LogOut className="h-5 w-5" />
+            <span className="font-medium">Выйти</span>
+          </button>
         </div>
       </nav>
 

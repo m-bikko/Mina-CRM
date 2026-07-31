@@ -26,6 +26,8 @@ Mina CRM (Amina) — монолит на Next.js 15 (App Router) + React 19 + Ty
 
 ## Ключевые принципы
 
+- **Аутентификация**: админка и API закрыты логином владельца — JWT-кука + `middleware.ts`, см. [[auth]].
+
 - **MongoDB transactions** для всех мутирующих денежных операций (продажа, завоз, возврат, списание, корректировка): `mongoose.startSession()` → `startTransaction()` → commit/abort. Исключение — обновление доставки (`app/api/sales/[id]/delivery/route.ts`) работает без session, см. [[delivery-flow]].
 - **Snapshot-паттерн** — имена и ставки типа оплаты копируются в документ продажи, см. [[snapshot-pattern]].
 - **Двойной учёт остатков**: денормализованный `Product.sizes[].quantity` (для UI/витрины) и партии [[inventory-batch]] (источник себестоимости). Каждая операция обязана двигать оба, см. [[fifo-inventory]].
