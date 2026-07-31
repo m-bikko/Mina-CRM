@@ -60,8 +60,33 @@ export default function StorePage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const catalogRef = useRef<HTMLDivElement>(null);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
 
   const minSwipeDistance = 50;
+
+  useEffect(() => {
+    const video = heroVideoRef.current;
+    if (!video) return;
+
+    const events: Array<keyof WindowEventMap> = ["pointerdown", "touchstart", "keydown"];
+
+    const unmute = () => {
+      video.muted = false;
+      video.play().catch(() => undefined);
+      events.forEach((event) => window.removeEventListener(event, unmute));
+    };
+
+    video.muted = false;
+    video
+      .play()
+      .catch(() => {
+        video.muted = true;
+        video.play().catch(() => undefined);
+        events.forEach((event) => window.addEventListener(event, unmute));
+      });
+
+    return () => events.forEach((event) => window.removeEventListener(event, unmute));
+  }, []);
 
   // Load cart from localStorage
   useEffect(() => {
@@ -296,6 +321,7 @@ export default function StorePage() {
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <video
+          ref={heroVideoRef}
           autoPlay
           loop
           muted
