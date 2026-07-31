@@ -71,9 +71,11 @@ export default function StorePage() {
     const events: Array<keyof WindowEventMap> = ["pointerdown", "touchstart", "keydown"];
     let fadeInterval: ReturnType<typeof setInterval> | undefined;
 
-    const fadeInSound = () => {
+    const enableSound = () => {
+      events.forEach((event) => window.removeEventListener(event, enableSound));
       video.volume = 0;
       video.muted = false;
+      video.play().catch(() => undefined);
       fadeInterval = setInterval(() => {
         const next = Math.min(video.volume + 0.05, 1);
         video.volume = next;
@@ -83,28 +85,14 @@ export default function StorePage() {
       }, 150);
     };
 
-    const unmute = () => {
-      fadeInSound();
-      video.play().catch(() => undefined);
-      events.forEach((event) => window.removeEventListener(event, unmute));
-    };
-
-    video.volume = 0;
-    video.muted = false;
-    video
-      .play()
-      .then(() => fadeInSound())
-      .catch(() => {
-        video.muted = true;
-        video.play().catch(() => undefined);
-        events.forEach((event) => window.addEventListener(event, unmute));
-      });
+    video.play().catch(() => undefined);
+    events.forEach((event) => window.addEventListener(event, enableSound));
 
     return () => {
       if (fadeInterval) {
         clearInterval(fadeInterval);
       }
-      events.forEach((event) => window.removeEventListener(event, unmute));
+      events.forEach((event) => window.removeEventListener(event, enableSound));
     };
   }, []);
 
