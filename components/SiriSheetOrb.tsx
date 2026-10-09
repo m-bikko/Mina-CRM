@@ -288,7 +288,7 @@ const SHEET_KEYS = [
 type SheetParams = Record<(typeof SHEET_KEYS)[number], number>;
 
 const STATE_TABLE: Record<OrbState, SheetParams> = {
-  idle: { speed: 0.3, warp: 0.52, ridge: 0.48, sharp: 0.9, zoom: 0.94, exposure: 0.74, mute: 0.12, glow: 0.16, rim: 0.6, hear: 0, voice: 0 },
+  idle: { speed: 0.3, warp: 0.52, ridge: 0.62, sharp: 0.95, zoom: 0.96, exposure: 0.95, mute: 0.06, glow: 0.28, rim: 0.8, hear: 0, voice: 0 },
   connecting: { speed: 0.5, warp: 0.78, ridge: 0.72, sharp: 0.95, zoom: 0.97, exposure: 0.84, mute: 0.08, glow: 0.22, rim: 0.7, hear: 0, voice: 0 },
   listening: { speed: 0.55, warp: 0.66, ridge: 0.7, sharp: 1, zoom: 1, exposure: 1.04, mute: 0, glow: 0.3, rim: 0.85, hear: 1, voice: 0 },
   thinking: { speed: 1, warp: 1, ridge: 1, sharp: 1, zoom: 1, exposure: 1, mute: 0, glow: 0.28, rim: 0.8, hear: 0, voice: 0 },
@@ -609,7 +609,7 @@ export const SiriSheetOrb = ({
   colorFrom = "#82f4ff",
   colorTo = "#8e6cff",
   paused = false,
-  label = "Siri Sheet orb",
+  label,
   className,
 }: SiriSheetOrbProps): ReactElement => {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -766,8 +766,9 @@ export const SiriSheetOrb = ({
   return (
     <div
       ref={hostRef}
-      role="img"
+      role={label ? "img" : undefined}
       aria-label={label}
+      aria-hidden={label ? undefined : true}
       data-state={state}
       className={`relative grid place-items-center ${className ?? ""}`}
       style={{ width: size, height: size }}

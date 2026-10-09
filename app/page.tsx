@@ -547,7 +547,6 @@ export default function StorePage() {
         products={filteredProducts}
         catalogRef={catalogRef}
         hidden={loading || filteredProducts.length === 0 || isInHeroZone || isCartOpen || selectedProduct !== null}
-        focusedId={orbFocusId}
         onFocusChange={setOrbFocusId}
         onOpen={openProduct}
       />

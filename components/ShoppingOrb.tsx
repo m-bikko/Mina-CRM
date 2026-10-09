@@ -17,40 +17,54 @@ interface ShoppingOrbProps<T extends ShoppingOrbProduct> {
   products: T[];
   catalogRef: RefObject<HTMLElement | null>;
   hidden: boolean;
-  focusedId: string | null;
   onFocusChange: (id: string | null) => void;
   onOpen: (product: T) => void;
 }
 
-type BubbleKind = "tip" | "focus";
+type BubbleKind = "hint" | "tip" | "focus";
 
 interface BubbleMessage {
   id: number;
   kind: BubbleKind;
-  productId: string;
+  productId: string | null;
   text: string;
 }
 
-interface OrbTarget {
-  key: string;
+interface Point {
   x: number;
   y: number;
+}
+
+interface OrbTarget extends Point {
+  key: string;
 }
 
 const IDLE_DELAY_MS = 2000;
 const TYPE_INTERVAL_MS = 30;
 const TIP_HOLD_MS = 4500;
+const HINT_HOLD_MS = 3500;
 const TIPS_PER_PAUSE = 3;
 const NAV_OFFSET = 72;
 const EDGE = 12;
 const MIN_VISIBLE_SHARE = 0.25;
+const BUBBLE_ROOM = 64;
+const SCROLL_BUBBLE_ROOM = 88;
+const SCROLL_STABLE_FRAMES = 5;
+const SCROLL_MIN_MS = 180;
+const SCROLL_MAX_MS = 1800;
 const TAP_SLOP_PX = 10;
 const TAP_MAX_MS = 600;
 const SPRING_K = 55;
 const SPRING_C = 2 * Math.sqrt(SPRING_K);
-const ORB_SIZE_MOBILE = 76;
-const ORB_SIZE_DESKTOP = 96;
+const ORB_SIZE_MOBILE = 92;
+const ORB_SIZE_DESKTOP = 116;
+const SCRIM_SCALE = 1.3;
+const OFFSCREEN = "translate3d(-300px, -300px, 0)";
 const DESKTOP_QUERY = "(min-width: 768px)";
+const HINT_STORAGE_KEY = "minawear-orb-hint";
+const HINT_TEXT = "Нажмите на меня — покажу товары";
+const ORB_BUTTON_LABEL = "Помощник: показать следующий товар";
+const CARD_SELECTOR = "[data-product-id]";
 const ACTIVITY_EVENTS = ["pointermove", "pointerdown", "touchstart", "wheel", "scroll", "keydown"] as const;
 const IGNORE_SELECTOR =
   "a, button, input, textarea, select, label, nav, [role='dialog'], [data-product-id], [data-orb-ignore]";
@@ -64,6 +78,9 @@ const TIP_TEMPLATES: ReadonlyArray<(name: string, price: string) => string> = [
 const formatPrice = (product: ShoppingOrbProduct): string =>
   `${(product.discountPrice || product.price).toLocaleString()} ₸`;
 
+const focusText = (product: ShoppingOrbProduct): string =>
+  `«${product.name}» — ${formatPrice(product)} · нажмите, чтобы открыть`;
+
 const isInStock = (product: ShoppingOrbProduct): boolean =>
   product.sizes.some((size) => size.quantity > 0);
 
@@ -74,6 +91,39 @@ const visibleShare = (rect: DOMRect, viewportHeight: number): number => {
   if (rect.height <= 0) return 0;
   const visible = Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, NAV_OFFSET);
   return visible / rect.height;
+};
+
+const attachPoint = (rect: DOMRect, r: number, viewportWidth: number, viewportHeight: number): Point => ({
+  x: clamp(rect.right - r * 0.4, r + 4, viewportWidth - r - 4),
+  y: clamp(rect.top - r * 0.2, NAV_OFFSET + r * 0.5, viewportHeight - r - EDGE),
+});
+
+const fitsForFocus = (rect: DOMRect, r: number, viewportHeight: number): boolean =>
+  rect.top >= NAV_OFFSET + r * 1.05 + BUBBLE_ROOM && rect.top + rect.width <= viewportHeight - EDGE;
+
+const scrollTopFor = (rect: DOMRect, r: number, viewportHeight: number): number => {
+  let top = Math.max(NAV_OFFSET + r * 1.05 + SCROLL_BUBBLE_ROOM, (viewportHeight - rect.height) / 2);
+  if (top + rect.width > viewportHeight - EDGE) {
+    top = Math.max(NAV_OFFSET + r * 1.05 + BUBBLE_ROOM, viewportHeight - EDGE - rect.width);
+  }
+  const maxScroll = Math.max(0, document.documentElement.scrollHeight - viewportHeight);
+  return clamp(Math.round(window.scrollY + rect.top - top), 0, maxScroll);
+};
+
+const readSessionFlag = (key: string): boolean => {
+  try {
+    return window.sessionStorage.getItem(key) === "1";
+  } catch {
+    return false;
+  }
+};
+
+const writeSessionFlag = (key: string): void => {
+  try {
+    window.sessionStorage.setItem(key, "1");
+  } catch {
+    return;
+  }
 };
 
 interface TypedTextProps {
@@ -122,7 +172,6 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
   products,
   catalogRef,
   hidden,
-  focusedId,
   onFocusChange,
   onOpen,
 }: ShoppingOrbProps<T>): ReactElement => {
@@ -131,8 +180,11 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
   const [message, setMessage] = useState<BubbleMessage | null>(null);
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [typed, setTyped] = useState(false);
+  const [travelling, setTravelling] = useState(false);
 
+  const scrimRef = useRef<HTMLDivElement>(null);
   const orbLayerRef = useRef<HTMLDivElement>(null);
+  const orbButtonRef = useRef<HTMLButtonElement>(null);
   const bubbleLayerRef = useRef<HTMLDivElement>(null);
   const bubbleRef = useRef<HTMLButtonElement>(null);
   const homeRef = useRef<HTMLDivElement>(null);
@@ -140,10 +192,13 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
   const productsRef = useRef(products);
   const onOpenRef = useRef(onOpen);
   const onFocusChangeRef = useRef(onFocusChange);
-  const focusedIdRef = useRef(focusedId);
+  const targetIdRef = useRef<string | null>(null);
+  const pendingIdRef = useRef<string | null>(null);
+  const settleRafRef = useRef(0);
   const hiddenRef = useRef(hidden);
   const reducedRef = useRef(reduced);
   const sizeRef = useRef(size);
+  const hintShownRef = useRef(false);
   const activeKindRef = useRef<BubbleKind | null>(null);
   const messageIdRef = useRef(0);
   const tipTurnRef = useRef(0);
@@ -164,6 +219,10 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
   }, [reduced]);
 
   useEffect(() => {
+    hintShownRef.current = readSessionFlag(HINT_STORAGE_KEY);
+  }, []);
+
+  useEffect(() => {
     const mq = window.matchMedia(DESKTOP_QUERY);
     const sync = (): void => setSize(mq.matches ? ORB_SIZE_DESKTOP : ORB_SIZE_MOBILE);
     sync();
@@ -176,18 +235,10 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
     requestFrameRef.current();
   }, [size]);
 
-  const showMessage = useCallback((kind: BubbleKind, product: ShoppingOrbProduct) => {
-    const price = formatPrice(product);
-    let text: string;
-    if (kind === "focus") {
-      text = `«${product.name}» — ${price} · нажмите, чтобы открыть`;
-    } else {
-      text = TIP_TEMPLATES[tipTurnRef.current % TIP_TEMPLATES.length](product.name, price);
-      tipTurnRef.current += 1;
-    }
+  const showText = useCallback((kind: BubbleKind, text: string, productId: string | null) => {
     messageIdRef.current += 1;
     activeKindRef.current = kind;
-    setMessage({ id: messageIdRef.current, kind, productId: product._id, text });
+    setMessage({ id: messageIdRef.current, kind, productId, text });
     setTyped(false);
     setBubbleVisible(true);
     requestFrameRef.current();
@@ -199,13 +250,23 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
     setBubbleVisible(false);
   }, []);
 
+  const cancelTravel = useCallback(() => {
+    if (settleRafRef.current !== 0) cancelAnimationFrame(settleRafRef.current);
+    settleRafRef.current = 0;
+    pendingIdRef.current = null;
+    setTravelling(false);
+  }, []);
+
+  useEffect(() => cancelTravel, [cancelTravel]);
+
   const releaseFocus = useCallback(() => {
-    if (focusedIdRef.current === null) return;
-    focusedIdRef.current = null;
+    if (targetIdRef.current === null && pendingIdRef.current === null) return;
+    cancelTravel();
+    targetIdRef.current = null;
     if (activeKindRef.current === "focus") hideMessage();
     onFocusChangeRef.current(null);
     requestFrameRef.current();
-  }, [hideMessage]);
+  }, [cancelTravel, hideMessage]);
 
   const releaseFocusRef = useRef(releaseFocus);
 
@@ -213,12 +274,28 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
     releaseFocusRef.current = releaseFocus;
   }, [releaseFocus]);
 
+  const focusCard = useCallback(
+    (id: string) => {
+      const product = productsRef.current.find((item) => item._id === id);
+      if (!product) {
+        releaseFocus();
+        return;
+      }
+      cancelTravel();
+      tipsLeftRef.current = 0;
+      targetIdRef.current = id;
+      onFocusChangeRef.current(id);
+      showText("focus", focusText(product), id);
+    },
+    [cancelTravel, releaseFocus, showText],
+  );
+
   const collectVisibleIds = useCallback((): Set<string> => {
     const ids = new Set<string>();
     const root = catalogRef.current;
     if (!root) return ids;
     const viewportHeight = window.innerHeight;
-    for (const card of Array.from(root.querySelectorAll<HTMLElement>("[data-product-id]"))) {
+    for (const card of Array.from(root.querySelectorAll<HTMLElement>(CARD_SELECTOR))) {
       const id = card.dataset.productId;
       if (id && visibleShare(card.getBoundingClientRect(), viewportHeight) >= MIN_VISIBLE_SHARE) {
         ids.add(id);
@@ -246,7 +323,7 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
   }, [collectVisibleIds]);
 
   const showNextTip = useCallback(() => {
-    if (tipsLeftRef.current <= 0 || focusedIdRef.current !== null || hiddenRef.current) {
+    if (tipsLeftRef.current <= 0 || targetIdRef.current !== null || hiddenRef.current) {
       hideMessage();
       return;
     }
@@ -256,8 +333,10 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
       return;
     }
     tipsLeftRef.current -= 1;
-    showMessage("tip", product);
-  }, [hideMessage, pickTipProduct, showMessage]);
+    const text = TIP_TEMPLATES[tipTurnRef.current % TIP_TEMPLATES.length](product.name, formatPrice(product));
+    tipTurnRef.current += 1;
+    showText("tip", text, product._id);
+  }, [hideMessage, pickTipProduct, showText]);
 
   const focusNearest = useCallback(
     (x: number, y: number) => {
@@ -266,7 +345,7 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
       const viewportHeight = window.innerHeight;
       let bestId: string | null = null;
       let bestDistance = Number.POSITIVE_INFINITY;
-      for (const card of Array.from(root.querySelectorAll<HTMLElement>("[data-product-id]"))) {
+      for (const card of Array.from(root.querySelectorAll<HTMLElement>(CARD_SELECTOR))) {
         const id = card.dataset.productId;
         if (!id) continue;
         const rect = card.getBoundingClientRect();
@@ -279,21 +358,71 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
           bestId = id;
         }
       }
-      if (bestId === null) return;
-      const product = productsRef.current.find((item) => item._id === bestId);
-      if (!product) return;
-      tipsLeftRef.current = 0;
-      focusedIdRef.current = bestId;
-      onFocusChangeRef.current(bestId);
-      showMessage("focus", product);
+      if (bestId !== null) focusCard(bestId);
     },
-    [catalogRef, showMessage],
+    [catalogRef, focusCard],
   );
 
-  useEffect(() => {
-    focusedIdRef.current = focusedId;
+  const stepToNext = useCallback(() => {
+    const root = catalogRef.current;
+    if (!root || hiddenRef.current) return;
+    const cards = Array.from(root.querySelectorAll<HTMLElement>(CARD_SELECTOR));
+    if (cards.length === 0) return;
+    const viewportHeight = window.innerHeight;
+    const rects = cards.map((card) => card.getBoundingClientRect());
+    const currentId = targetIdRef.current;
+    let start = currentId === null ? -1 : cards.findIndex((card) => card.dataset.productId === currentId);
+    if (start === -1) {
+      start = rects.findIndex((rect) => visibleShare(rect, viewportHeight) >= MIN_VISIBLE_SHARE);
+    }
+    if (start === -1) {
+      start = rects.reduce((last, rect, index) => (rect.bottom <= NAV_OFFSET ? index : last), -1);
+    }
+    const index = (start + 1) % cards.length;
+    const id = cards[index].dataset.productId;
+    if (!id) return;
+    const rect = rects[index];
+    const r = sizeRef.current / 2;
+    if (!hintShownRef.current) {
+      hintShownRef.current = true;
+      writeSessionFlag(HINT_STORAGE_KEY);
+    }
+    tipsLeftRef.current = 0;
+    hideMessage();
+    if (fitsForFocus(rect, r, viewportHeight)) {
+      focusCard(id);
+      return;
+    }
+    cancelTravel();
+    onFocusChangeRef.current(null);
+    targetIdRef.current = id;
+    pendingIdRef.current = id;
+    setTravelling(true);
+    const top = scrollTopFor(rect, r, viewportHeight);
+    window.scrollTo({ top, behavior: reducedRef.current ? "instant" : "smooth" });
+    const startedAt = performance.now();
+    let lastY = window.scrollY;
+    let stableFrames = 0;
+    const watch = (): void => {
+      const y = window.scrollY;
+      if (Math.abs(y - lastY) < 0.5) {
+        stableFrames += 1;
+      } else {
+        stableFrames = 0;
+        lastY = y;
+      }
+      const elapsed = performance.now() - startedAt;
+      const arrived = Math.abs(y - top) < 1.5;
+      if (arrived || (stableFrames >= SCROLL_STABLE_FRAMES && elapsed > SCROLL_MIN_MS) || elapsed > SCROLL_MAX_MS) {
+        settleRafRef.current = 0;
+        if (pendingIdRef.current === id) focusCard(id);
+        return;
+      }
+      settleRafRef.current = requestAnimationFrame(watch);
+    };
+    settleRafRef.current = requestAnimationFrame(watch);
     requestFrameRef.current();
-  }, [focusedId]);
+  }, [catalogRef, cancelTravel, focusCard, hideMessage]);
 
   useEffect(() => {
     hiddenRef.current = hidden;
@@ -306,7 +435,7 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
   }, [hidden, releaseFocus, hideMessage]);
 
   useEffect(() => {
-    const id = focusedIdRef.current;
+    const id = targetIdRef.current;
     if (id !== null && !products.some((product) => product._id === id)) releaseFocus();
   }, [products, releaseFocus]);
 
@@ -319,16 +448,11 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
 
     const resolveTarget = (viewportWidth: number, viewportHeight: number): OrbTarget | null => {
       const r = sizeRef.current / 2;
-      const id = focusedIdRef.current;
+      const id = targetIdRef.current;
       if (id !== null) {
-        const card = findCard(id);
-        const rect = card?.getBoundingClientRect();
-        if (rect && visibleShare(rect, viewportHeight) >= MIN_VISIBLE_SHARE) {
-          return {
-            key: id,
-            x: clamp(rect.right - r * 0.55, r + 4, viewportWidth - r - 4),
-            y: Math.max(rect.top - r * 0.1, NAV_OFFSET + r * 0.4),
-          };
+        const rect = findCard(id)?.getBoundingClientRect();
+        if (rect && (pendingIdRef.current === id || visibleShare(rect, viewportHeight) >= MIN_VISIBLE_SHARE)) {
+          return { key: id, ...attachPoint(rect, r, viewportWidth, viewportHeight) };
         }
         releaseFocusRef.current();
       }
@@ -398,6 +522,11 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
       if (orbLayer) {
         orbLayer.style.transform = `translate3d(${(motion.x - r).toFixed(1)}px, ${(motion.y - r).toFixed(1)}px, 0)`;
       }
+      const scrim = scrimRef.current;
+      if (scrim) {
+        const s = (sizeRef.current * SCRIM_SCALE) / 2;
+        scrim.style.transform = `translate3d(${(motion.x - s).toFixed(1)}px, ${(motion.y - s).toFixed(1)}px, 0)`;
+      }
       placeBubble(motion.x, motion.y, r, viewportWidth, viewportHeight);
 
       if (settled) motion.last = 0;
@@ -437,9 +566,19 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
     let timer: ReturnType<typeof setTimeout> | undefined;
     let lastActivity = performance.now();
 
+    const isOwnTarget = (target: EventTarget | null): boolean =>
+      target instanceof Node &&
+      (Boolean(bubbleRef.current?.contains(target)) || Boolean(orbButtonRef.current?.contains(target)));
+
     const startTips = (): void => {
-      if (document.visibilityState !== "visible" || focusedIdRef.current !== null) return;
+      if (document.visibilityState !== "visible" || targetIdRef.current !== null) return;
       tipsLeftRef.current = TIPS_PER_PAUSE;
+      if (!hintShownRef.current) {
+        hintShownRef.current = true;
+        writeSessionFlag(HINT_STORAGE_KEY);
+        showText("hint", HINT_TEXT, null);
+        return;
+      }
       showNextTip();
     };
 
@@ -454,11 +593,10 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
     };
 
     const onActivity = (event: Event): void => {
-      const bubble = bubbleRef.current;
-      if (bubble && event.target instanceof Node && bubble.contains(event.target)) return;
+      if (isOwnTarget(event.target)) return;
       lastActivity = performance.now();
       tipsLeftRef.current = 0;
-      if (activeKindRef.current === "tip") hideMessage();
+      if (activeKindRef.current === "tip" || activeKindRef.current === "hint") hideMessage();
       if (timer === undefined) timer = setTimeout(check, IDLE_DELAY_MS);
     };
 
@@ -471,11 +609,11 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
       for (const name of ACTIVITY_EVENTS) window.removeEventListener(name, onActivity);
       document.removeEventListener("visibilitychange", onActivity);
     };
-  }, [hidden, hideMessage, showNextTip]);
+  }, [hidden, hideMessage, showNextTip, showText]);
 
   useEffect(() => {
-    if (!message || message.kind !== "tip" || !bubbleVisible || !typed) return;
-    const timer = setTimeout(showNextTip, TIP_HOLD_MS);
+    if (!message || message.kind === "focus" || !bubbleVisible || !typed) return;
+    const timer = setTimeout(showNextTip, message.kind === "hint" ? HINT_HOLD_MS : TIP_HOLD_MS);
     return () => clearTimeout(timer);
   }, [message, bubbleVisible, typed, showNextTip]);
 
@@ -525,11 +663,22 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
 
   const handleBubbleClick = (): void => {
     if (!message) return;
+    if (message.kind === "hint") {
+      stepToNext();
+      return;
+    }
     const product = productsRef.current.find((item) => item._id === message.productId);
     if (product) onOpenRef.current(product);
   };
 
-  const orbState: OrbState = bubbleVisible ? (typed ? "listening" : "speaking") : "idle";
+  const orbState: OrbState = travelling
+    ? "thinking"
+    : bubbleVisible
+      ? typed
+        ? "listening"
+        : "speaking"
+      : "idle";
+  const scrimSize = Math.round(size * SCRIM_SCALE);
 
   return (
     <>
@@ -539,24 +688,44 @@ export const ShoppingOrb = <T extends ShoppingOrbProduct>({
         className="pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom,0px)_+_1.25rem)] right-[calc(env(safe-area-inset-right,0px)_+_1rem)] h-px w-px"
       />
       <div
-        ref={orbLayerRef}
-        aria-hidden={hidden}
+        ref={scrimRef}
+        aria-hidden="true"
         className={cn(
-          "pointer-events-none fixed left-0 top-0 z-0 transition-opacity duration-500 will-change-transform motion-reduce:transition-none",
+          "pointer-events-none fixed left-0 top-0 z-20 rounded-full bg-[radial-gradient(closest-side,rgba(76,5,25,0.62),rgba(76,5,25,0.34)_55%,transparent)] transition-opacity duration-500 motion-reduce:transition-none",
           hidden ? "opacity-0" : "opacity-100",
         )}
-        style={{ width: size, height: size, transform: "translate3d(-200px, -200px, 0)" }}
+        style={{ width: scrimSize, height: scrimSize, transform: OFFSCREEN }}
+      />
+      <div
+        ref={orbLayerRef}
+        inert={hidden}
+        className={cn(
+          "pointer-events-none fixed left-0 top-0 z-20 mix-blend-screen transition-opacity duration-500 will-change-transform motion-reduce:transition-none",
+          hidden ? "opacity-0" : "opacity-100",
+        )}
+        style={{ width: size, height: size, transform: OFFSCREEN }}
       >
         <div className="relative h-full w-full animate-orb-float motion-reduce:animate-none">
-          <span aria-hidden="true" className="absolute -inset-1/3 rounded-full bg-rose-500/25 blur-2xl" />
-          <SiriSheetOrb
-            state={orbState}
-            size={size}
-            colorFrom="#fda4af"
-            colorTo="#9f1239"
-            paused={hidden}
-            label="Помощник по каталогу"
-          />
+          <span aria-hidden="true" className="absolute -inset-1/3 rounded-full bg-rose-500/35 blur-2xl" />
+          <button
+            ref={orbButtonRef}
+            type="button"
+            aria-label={ORB_BUTTON_LABEL}
+            onClick={stepToNext}
+            className={cn(
+              "relative block rounded-full transition-transform duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200/80 motion-reduce:transition-none motion-reduce:active:scale-100",
+              hidden ? "pointer-events-none" : "pointer-events-auto cursor-pointer",
+            )}
+            style={{ width: size, height: size }}
+          >
+            <SiriSheetOrb
+              state={orbState}
+              size={size}
+              colorFrom="#fda4af"
+              colorTo="#9f1239"
+              paused={hidden}
+            />
+          </button>
         </div>
       </div>
       <div
