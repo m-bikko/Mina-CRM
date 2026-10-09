@@ -34,7 +34,7 @@ sources: [app/page.tsx, components/JsonLd.tsx, components/ShoppingOrb.tsx, compo
 
 ## Маркетинг
 
-- 15-секундный вертикальный промо-ролик (Reels/TikTok) собран на HyperFrames из реальных фото и цен каталога, взятых через публичный `GET /api/products`. Проект лежит вне репозитория: `~/Development/mina-wear-promo`. Версия v2 (`renders/minawear-promo-15s-v2.mp4`) смонтирована в бит трека 130 BPM из каталога HeyGen; для музыки нужен HeyGen CLI (`~/.local/bin/heygen`).
+- 15-секундный вертикальный промо-ролик (Reels/TikTok) собран на HyperFrames из реальных фото и цен каталога, взятых через публичный `GET /api/products`. Проект лежит в `mina-wear-promo/` в корне репозитория и исключён из git (`.gitignore`): рендеры и медиа весят ~90 МБ. Версия v2 (`renders/minawear-promo-15s-v2.mp4`) смонтирована в бит трека 130 BPM из каталога HeyGen; для музыки нужен HeyGen CLI (`~/.local/bin/heygen`).
 
 ## SEO
 
