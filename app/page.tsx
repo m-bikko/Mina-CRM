@@ -681,11 +681,6 @@ export default function StorePage() {
                           }`}
                       >
                         {size.label}
-                        {size.quantity > 0 && (
-                          <span className="ml-2 text-xs text-neutral-500">
-                            ({size.quantity})
-                          </span>
-                        )}
                       </button>
                     ))}
                   </div>
