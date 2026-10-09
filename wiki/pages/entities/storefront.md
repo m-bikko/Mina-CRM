@@ -4,7 +4,7 @@ type: entity
 tags: [frontend, public, seo]
 created: 2026-07-31
 updated: 2026-10-09
-sources: [app/page.tsx, components/JsonLd.tsx, models/PageVisit.ts, app/sitemap.ts, app/robots.ts]
+sources: [app/page.tsx, components/JsonLd.tsx, components/ShoppingOrb.tsx, components/SiriSheetOrb.tsx, models/PageVisit.ts, app/sitemap.ts, app/robots.ts]
 ---
 
 # Storefront (витрина)
@@ -19,6 +19,22 @@ sources: [app/page.tsx, components/JsonLd.tsx, models/PageVisit.ts, app/sitemap.
 - Клиентская корзина (state, без персистентности на сервере).
 - **Оформление заказа — через WhatsApp**: корзина сериализуется в текст сообщения на номер магазина (константа `WHATSAPP_NUMBER` в `app/page.tsx`). Заказ затем вручную вносится админом как [[sale]].
 - Счётчик посещений: `POST /api/page-visits` пишет документ PageVisit (модель `models/PageVisit.ts` — только timestamp).
+- **Орб-помощник** (`components/ShoppingOrb.tsx`): фоновый орб, который «подсказывает» товары. Визуал — WebGL-орб «Siri Sheet» из VoiceOrbs (MIT, атрибуция в `README.md`), адаптирован в `components/SiriSheetOrb.tsx` без npm-зависимостей; цвета rose (`#fda4af` → `#9f1239`).
+  - Слои: орб — fixed-слой `z-0` под сеткой (секция каталога и футер подняты до `relative z-10`), облачко-реплика — отдельный fixed-слой `z-30` над сеткой, но под navbar (`z-40`) и модалками (`z-50`). Оба слоя `pointer-events-none`, кликабельно только облачко.
+  - Скрыт (fade-out + пауза WebGL-цикла) в hero-зоне, при открытой карточке товара или корзине, во время загрузки и при пустом результате поиска. WebGL-цикл также стоит на паузе вне экрана и в фоновой вкладке.
+  - Простой > 2 сек (нет pointermove/pointerdown/touchstart/wheel/scroll/keydown) → состояние `speaking` и печатающаяся реплика о реальном товаре: название + цена (`discountPrice || price`, как на карточке). Предпочитает товары в наличии и видимые на экране, не повторяется, пока не обойдёт все; до 3 реплик за одну паузу. Любая активность прячет реплику (взаимодействие с самим облачком не считается). Про остатки и скидки орб ничего не говорит.
+  - Тап по фону (pointerdown→pointerup без сдвига, не по ссылке/кнопке/полю/карточке/nav/модалке) → орб плывёт (spring) к ближайшей видимой карточке и «выглядывает» из-за её правого верхнего угла; карточка подсвечивается (непрозрачная + rose ring), облачко ««Название» — цена · нажмите, чтобы открыть» открывает товар через `openProduct`. Клик по самой карточке работает как раньше. Подсвеченная карточка держится при скролле (spring считается в системе координат цели); когда видно меньше 25% карточки, подсветка снимается и орб уплывает к якорю внизу справа (с учётом safe-area). Состояние подсветки — `orbFocusId` в `app/page.tsx`, карточки помечены `data-product-id`.
+  - Карточки каталога — 88% непрозрачности (100% при hover и подсветке), чтобы свечение орба читалось сквозь них.
+  - `prefers-reduced-motion`: без полёта (прыжок), без печати (сразу полный текст), орб статичен.
+  - Gotcha: на тач-устройствах браузер «притягивает» тап в узком зазоре между карточками к соседней карточке (touch adjustment) — откроется товар, а не навигация орба. Это ожидаемо; навигация срабатывает на тапах по свободному фону.
+
+## Домен
+
+Продакшен-витрина: `https://mina-wear.vercel.app`. В коде (`app/layout.tsx`, `app/sitemap.ts`, `app/robots.ts`, `components/JsonLd.tsx`) домен берётся из `NEXT_PUBLIC_SITE_URL` с фолбэком `https://mina-crm.vercel.app`, а этот адрес обслуживает другое приложение. На 2026-10-09 живые `sitemap.xml` и `robots.txt` отдают именно `mina-crm.vercel.app`: переменная в Vercel не задана или устарела. Кроме того, sitemap перечисляет `/product/<id>`, а такого маршрута в `app/` нет.
+
+## Маркетинг
+
+- 15-секундный вертикальный промо-ролик (Reels/TikTok) собран на HyperFrames из реальных фото и цен каталога, взятых через публичный `GET /api/products`. Проект лежит вне репозитория: `~/Development/mina-wear-promo`. Версия v2 (`renders/minawear-promo-15s-v2.mp4`) смонтирована в бит трека 130 BPM из каталога HeyGen; для музыки нужен HeyGen CLI (`~/.local/bin/heygen`).
 
 ## SEO
 

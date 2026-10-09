@@ -10,6 +10,7 @@ import {
   ProductListJsonLd,
   BreadcrumbJsonLd,
 } from "@/components/JsonLd";
+import { ShoppingOrb } from "@/components/ShoppingOrb";
 
 interface Size {
   label: string;
@@ -61,6 +62,7 @@ export default function StorePage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [soundUnlocked, setSoundUnlocked] = useState(false);
   const [isInHeroZone, setIsInHeroZone] = useState(true);
+  const [orbFocusId, setOrbFocusId] = useState<string | null>(null);
   const catalogRef = useRef<HTMLDivElement>(null);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -404,7 +406,7 @@ export default function StorePage() {
       </section>
 
       {/* Catalog Section */}
-      <section ref={catalogRef} className="py-16 md:py-24 px-4">
+      <section ref={catalogRef} className="relative z-10 py-16 md:py-24 px-4">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
@@ -452,14 +454,21 @@ export default function StorePage() {
               {filteredProducts.map((product) => {
                 const totalQty = getTotalQuantity(product.sizes);
                 const availableSizes = getAvailableSizes(product.sizes);
+                const isOrbFocused = orbFocusId === product._id;
 
                 return (
                   <div
                     key={product._id}
+                    data-product-id={product._id}
                     className="group cursor-pointer"
                     onClick={() => openProduct(product)}
                   >
-                    <div className="relative aspect-square bg-neutral-900 rounded-lg overflow-hidden mb-3">
+                    <div
+                      className={`relative aspect-square bg-neutral-900 rounded-lg overflow-hidden mb-3 transition-[opacity,box-shadow] duration-300 ${isOrbFocused
+                        ? "opacity-100 ring-2 ring-rose-400/70 shadow-[0_0_28px_rgba(251,113,133,0.35)]"
+                        : "opacity-[0.88] group-hover:opacity-100"
+                        }`}
+                    >
                       {product.images[0] ? (
                         <Image
                           src={product.images[0]}
@@ -519,7 +528,7 @@ export default function StorePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-neutral-900 py-8">
+      <footer className="relative z-10 border-t border-neutral-900 py-8">
         <div className="max-w-7xl mx-auto px-4 flex flex-col items-center gap-4">
           <Image
             src="/Logo_minawear.svg"
@@ -534,9 +543,19 @@ export default function StorePage() {
         </div>
       </footer>
 
+      <ShoppingOrb
+        products={filteredProducts}
+        catalogRef={catalogRef}
+        hidden={loading || filteredProducts.length === 0 || isInHeroZone || isCartOpen || selectedProduct !== null}
+        focusedId={orbFocusId}
+        onFocusChange={setOrbFocusId}
+        onOpen={openProduct}
+      />
+
       {/* Product Modal */}
       {selectedProduct && (
         <div
+          data-orb-ignore
           className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 overflow-y-auto"
           onClick={() => setSelectedProduct(null)}
         >
@@ -773,6 +792,7 @@ export default function StorePage() {
       {/* Cart Modal */}
       {isCartOpen && (
         <div
+          data-orb-ignore
           className="fixed inset-0 bg-black/90 z-50 flex items-start justify-end"
           onClick={() => setIsCartOpen(false)}
         >
