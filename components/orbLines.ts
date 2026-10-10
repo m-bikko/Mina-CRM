@@ -830,7 +830,7 @@ const formatMoney = (value: number): string =>
 
 const joinList = (items: readonly string[], conjunction: string): string => {
   if (items.length <= 1) return items.join("");
-  return `${items.slice(0, -1).join(", ")} ${conjunction} ${items[items.length - 1]}`;
+  return `${items.slice(0, -1).join(", ")} ${conjunction} ${items[items.length - 1]}`;
 };
 
 const normalizeToken = (token: string): string => {
