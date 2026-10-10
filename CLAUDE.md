@@ -79,7 +79,7 @@ AUTH_SECRET=...
 
 ## Authentication
 
-Single-owner login for the admin panel: credentials in env, JWT (jose) in an httpOnly cookie (30 days), verified by `middleware.ts`. All `/admin/*` pages and API routes are protected except the storefront's public endpoints (`GET /api/products`, `POST /api/page-visits`) and `/api/auth/*`. Login page: `/login`.
+Single-owner login for the admin panel: credentials in env, JWT (jose) in an httpOnly cookie (30 days), verified by `middleware.ts`. All `/admin/*` pages and API routes are protected except `POST /api/page-visits` and `/api/auth/*`. The storefront reads products on the server (`lib/catalog.ts`), so `GET /api/products` (which exposes stock quantities) is admin-only. Login page: `/login`.
 
 ## Wiki (База знаний)
 

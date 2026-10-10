@@ -4,8 +4,8 @@ import { StoreHome, homeMetadata } from "@/components/storefront/StoreHome";
 
 export const revalidate = 300;
 
-export const generateMetadata = (): Promise<Metadata> => homeMetadata("ru");
+export const generateMetadata = (): Promise<Metadata> => homeMetadata("kk");
 
 export default function Page(): Promise<ReactElement> {
-  return StoreHome({ locale: "ru" });
+  return StoreHome({ locale: "kk" });
 }

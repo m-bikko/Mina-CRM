@@ -1,31 +1,17 @@
 import React from "react";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://mina-crm.vercel.app";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Minawear — Изысканная женская одежда в Казахстане",
-    template: "%s | Minawear",
+    default: "Женская одежда с доставкой по Казахстану — Minawear",
+    template: "%s",
   },
   description:
-    "Minawear — бутик изысканной женской одежды. Стильные платья, костюмы, блузы и аксессуары. Доставка по Казахстану. Высокое качество, актуальные тренды.",
-  keywords: [
-    "женская одежда",
-    "купить платье",
-    "женские костюмы",
-    "модная одежда Казахстан",
-    "Minawear",
-    "бутик одежды",
-    "стильная одежда",
-    "платья Алматы",
-    "женская мода",
-    "одежда онлайн",
-    "интернет магазин одежды",
-    "казахстан одежда",
-  ],
+    "Атласные рубашки, кардиганы, топы, джинсы, юбки и брюки. Размеры и цены на сайте, заказ в WhatsApp, доставка курьером по городу и почтой по Казахстану.",
+  applicationName: "Minawear",
   authors: [{ name: "Minawear" }],
   creator: "Minawear",
   publisher: "Minawear",
@@ -34,37 +20,22 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/Logo_minawear.svg", type: "image/svg+xml" },
-    ],
-    apple: "/apple-touch-icon.png",
-  },
   manifest: "/manifest.json",
   openGraph: {
     type: "website",
     locale: "ru_KZ",
-    url: siteUrl,
+    url: SITE_URL,
     siteName: "Minawear",
-    title: "Minawear — Изысканная женская одежда",
+    title: "Женская одежда с доставкой по Казахстану — Minawear",
     description:
-      "Бутик изысканной женской одежды. Стильные платья, костюмы и аксессуары с доставкой по Казахстану.",
-    images: [
-      {
-        url: "/Logo_minawear.svg",
-        width: 800,
-        height: 400,
-        alt: "Minawear — Изысканная женская одежда",
-      },
-    ],
+      "Атласные рубашки, кардиганы, топы, джинсы, юбки и брюки. Заказ в WhatsApp, доставка по Казахстану.",
+    images: [{ url: "/og/og-ru.jpg", width: 1200, height: 630, alt: "Minawear — женская одежда" }],
   },
   twitter: {
-    card: "summary",
-    title: "Minawear — Изысканная женская одежда",
-    description:
-      "Бутик изысканной женской одежды. Стильные платья, костюмы и аксессуары с доставкой по Казахстану.",
-    images: ["/Logo_minawear.svg"],
+    card: "summary_large_image",
+    title: "Женская одежда с доставкой по Казахстану — Minawear",
+    description: "Атласные рубашки, кардиганы, топы, джинсы, юбки и брюки. Заказ в WhatsApp, доставка по Казахстану.",
+    images: ["/og/og-ru.jpg"],
   },
   robots: {
     index: true,
@@ -80,9 +51,6 @@ export const metadata: Metadata = {
   verification: {
     google: "googlea0c951e3477111d8",
     yandex: "61ca05eb1648abc0",
-  },
-  alternates: {
-    canonical: siteUrl,
   },
   category: "fashion",
 };

@@ -1,7 +1,7 @@
 {
-  "name": "Minawear — Изысканная женская одежда",
+  "name": "Minawear — женская одежда с доставкой по Казахстану",
   "short_name": "Minawear",
-  "description": "Бутик изысканной женской одежды. Стильные платья, костюмы и аксессуары.",
+  "description": "Атласные рубашки, кардиганы, топы, джинсы, юбки и брюки. Заказ в WhatsApp, доставка по Казахстану.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",
@@ -21,7 +21,11 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["shopping", "fashion", "lifestyle"],
-  "lang": "ru",
+  "categories": [
+    "shopping",
+    "fashion",
+    "lifestyle"
+  ],
+  "lang": "ru-KZ",
   "dir": "ltr"
 }

@@ -3,7 +3,7 @@ title: Аутентификация
 type: concept
 tags: [auth, security, middleware]
 created: 2026-07-31
-updated: 2026-07-31
+updated: 2026-10-10
 sources: [middleware.ts, lib/auth.ts, app/api/auth/, app/login/page.tsx, docs/superpowers/specs/2026-07-31-admin-login-design.md]
 ---
 
@@ -23,9 +23,10 @@ sources: [middleware.ts, lib/auth.ts, app/api/auth/, app/login/page.tsx, docs/su
 
 ## Публичные исключения (нужны витрине [[storefront]])
 
-- `GET /api/products` — каталог;
 - `POST /api/page-visits` — счётчик визитов;
 - `/api/auth/*`.
+
+`GET /api/products` до 2026-10-10 тоже был публичным, но он отдаёт точные остатки (`sizes[].quantity`). Теперь витрина читает каталог на сервере (`lib/catalog.ts`, наружу уходит только «в наличии / нет»), а этот эндпоинт доступен только с кукой.
 
 Всё остальное, включая опасные `/api/clear-db` и `/api/sales/clear`, — только с кукой.
 

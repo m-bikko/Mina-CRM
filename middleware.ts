@@ -5,7 +5,6 @@ const isPublicApi = (request: NextRequest): boolean => {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith("/api/auth/")) return true;
-  if (pathname === "/api/products" && request.method === "GET") return true;
   if (pathname === "/api/page-visits" && request.method === "POST") return true;
 
   return false;

@@ -1,36 +1,35 @@
-import { MetadataRoute } from "next";
-import { connectDB } from "@/lib/db/mongodb";
-import Product from "@/models/Product";
+import type { MetadataRoute } from "next";
+import { CATEGORIES, LOCALES, alternateLanguages, localePath } from "@/lib/i18n";
+import { getCatalog } from "@/lib/catalog";
+import { absoluteUrl } from "@/lib/site";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://mina-crm.vercel.app";
+export const dynamic = "force-dynamic";
+
+const entriesFor = (
+  path: string,
+  lastModified: Date,
+  changeFrequency: "daily" | "weekly",
+  priority: number,
+): MetadataRoute.Sitemap =>
+  LOCALES.map((locale) => ({
+    url: absoluteUrl(localePath(locale, path)),
+    lastModified,
+    changeFrequency,
+    priority,
+    alternates: { languages: alternateLanguages(path) },
+  }));
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Base pages
-  const staticPages: MetadataRoute.Sitemap = [
-    {
-      url: siteUrl,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 1,
-    },
-  ];
-
-  // Dynamic product pages (if you add individual product pages in the future)
+  const home = entriesFor("/", new Date(), "daily", 1);
   try {
-    await connectDB();
-    const products = await Product.find({ isActive: true })
-      .select("_id updatedAt")
-      .lean();
-
-    const productPages: MetadataRoute.Sitemap = products.map((product) => ({
-      url: `${siteUrl}/product/${product._id}`,
-      lastModified: product.updatedAt || new Date(),
-      changeFrequency: "weekly" as const,
-      priority: 0.8,
-    }));
-
-    return [...staticPages, ...productPages];
+    const catalog = await getCatalog();
+    const latest = catalog.reduce((max, p) => (p.updatedAt > max ? p.updatedAt : max), new Date(0).toISOString());
+    const categories = CATEGORIES.filter((c) => catalog.some((p) => p.categorySlug === c.slug)).flatMap((c) =>
+      entriesFor(`/category/${c.slug}`, new Date(latest), "weekly", 0.8),
+    );
+    const products = catalog.flatMap((p) => entriesFor(`/product/${p.slug}`, new Date(p.updatedAt), "weekly", 0.7));
+    return [...home, ...categories, ...products];
   } catch {
-    return staticPages;
+    return home;
   }
 }
