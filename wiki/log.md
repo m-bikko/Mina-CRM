@@ -1,5 +1,9 @@
 # Лог операций wiki
 
+## [2026-10-10] fix | чистая сборка без предупреждений, lint на ESLint CLI
+
+В чистой сборке (как на Vercel) были предупреждения: Edge Runtime ругался на `CompressionStream` из корневого импорта `jose`, `caniuse-lite` устарел, `npm warn deprecated q` тянулся из `cloudinary` 2.8. Импорты jose переведены на подпути, зависимости обновлены в пределах диапазонов `package.json` (next 15.5.27, mongoose 8.24.5, cloudinary 2.11.0, postcss 8.5.29), critical-уязвимость Next закрыта. Lint переведён с устаревшего `next lint` на `eslint .` с `eslint.config.mjs` (FlatCompat, `next/core-web-vitals`): теперь проверяются и корневые файлы, `models/`, `scripts/`, `middleware.ts`. Обновлена страница [[auth]].
+
 ## [2026-10-10] feat | SEO витрины под Казахстан, три языка
 
 Исправлен canonical-домен: раньше все canonical, sitemap и JSON-LD указывали на чужой `mina-crm.vercel.app`. Витрина стала трёхъязычной (ru в корне, `/kk`, `/en`, hreflang ru-KZ/kk-KZ/en/x-default). Каталог рендерится на сервере. Появились страницы товаров и категорий с локализованными title/description, H1, хлебными крошками и JSON-LD (OnlineStore, WebSite+SearchAction, ItemList, FAQPage, Product+Offer в KZT). Добавлены OG-картинки на трёх языках, иконки, `llms.txt`; sitemap и robots переписаны. `GET /api/products` стал доступен только админу: он отдавал точные остатки. Новая страница [[seo]]; обновлены [[storefront]] и [[auth]].

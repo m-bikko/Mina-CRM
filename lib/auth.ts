@@ -1,4 +1,5 @@
-import { SignJWT, jwtVerify } from "jose";
+import { SignJWT } from "jose/jwt/sign";
+import { jwtVerify } from "jose/jwt/verify";
 
 export const AUTH_COOKIE = "mina_admin_token";
 export const AUTH_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;

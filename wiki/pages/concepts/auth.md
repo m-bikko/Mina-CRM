@@ -35,6 +35,10 @@ sources: [middleware.ts, lib/auth.ts, app/api/auth/, app/login/page.tsx, docs/su
 - Пароль в env открытым текстом: доступ к env эквивалентен доступу к серверу.
 - Rate-limiting — только задержка 500 мс на неверный вход.
 
+## Gotcha: импорт jose в middleware
+
+`lib/auth.ts` импортирует `SignJWT` из `jose/jwt/sign` и `jwtVerify` из `jose/jwt/verify`, а не из корня `jose`. Корневой вход тянет в Edge-бандл middleware ещё и JWE-расшифровку с `CompressionStream`/`DecompressionStream`. Тогда `next build` пишет `⚠ Compiled with warnings … not supported in the Edge Runtime`. В локальной сборке с кешем webpack предупреждения не видно, оно появляется только при чистой сборке, как на Vercel.
+
 ## См. также
 
 - [[architecture]] — место middleware в общей картине
